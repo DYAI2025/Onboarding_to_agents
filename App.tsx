@@ -142,7 +142,7 @@ export default function App() {
                 <span className="font-sans text-[10px] text-astro-subtext uppercase tracking-widest font-bold">Authenticated_Seeker</span>
                 <span className="font-serif italic text-sm text-astro-gold">Julian S.</span>
              </div>
-             <div className="w-10 h-10 rounded-full bg-astro-text text-white flex items-center justify-center font-serif text-lg shadow-elevated">J</div>
+             <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
           </div>
         </div>
 
@@ -196,7 +196,11 @@ export default function App() {
               )}
               {generatedImage && analysisResult && (
                 <div className="animate-fade-in-up">
-                  <ResultSymbol imageUrl={generatedImage} synthesis={analysisResult.synthesisTitle} />
+                  <ResultSymbol 
+                    imageUrl={generatedImage} 
+                    synthesis={analysisResult.synthesisTitle} 
+                    sunSign={analysisResult.western.sunSign}
+                  />
                 </div>
               )}
             </div>
