@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astro Fusion Engine | QuizzMe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --c-astro-bg: #FCFAF7;
+        --c-astro-card: #FFFFFF;
+        --c-astro-gold: #D4AF37;
+        --c-astro-gold-light: #FDF8E8;
+        --c-astro-text: #2D2A26;
+        --c-astro-subtext: #7A746E;
+        --c-astro-border: #F0EDE6;
+        
+        /* Pastel Palette */
+        --c-pastel-violet: #F5F3FF;
+        --c-pastel-amber: #FFFBEB;
+        --c-pastel-blue: #F0F9FF;
+        --c-pastel-sage: #F0FDF4;
+        
+        /* Shadow Tokens */
+        --shadow-ambient: 0 10px 40px -10px rgba(0,0,0,0.04);
+        --shadow-elevated: 0 25px 60px -12px rgba(0,0,0,0.08);
+        --shadow-inner: inset 0 2px 4px 0 rgba(0,0,0,0.02);
+      }
+
+      .dark {
+        --c-astro-bg: #0D0D0F;
+        --c-astro-card: #141417;
+        --c-astro-gold: #E5C558;
+        --c-astro-gold-light: #2A2820;
+        --c-astro-text: #E8E6E3;
+        --c-astro-subtext: #94918C;
+        --c-astro-border: #232326;
+        
+        --c-pastel-violet: #1E1B2E;
+        --c-pastel-amber: #262118;
+        --c-pastel-blue: #161E26;
+        --c-pastel-sage: #16211B;
+      }
+
+      body {
+        background-color: var(--c-astro-bg);
+        color: var(--c-astro-text);
+        transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease;
+        overflow-x: hidden;
+        font-family: 'Inter', sans-serif;
+      }
+
+      .font-serif { font-family: 'Cormorant Garamond', serif; }
+      
+      /* Glass effect */
+      .glass {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .dark .glass {
+        background: rgba(20, 20, 23, 0.7);
+      }
+
+      /* Floating Animation */
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+      .animate-float { animation: float 6s ease-in-out infinite; }
+
+      /* 3D Helpers */
+      .preserve-3d { transform-style: preserve-3d; }
+      .perspective-1000 { perspective: 1000px; }
+
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb {
+        background: var(--c-astro-gold);
+        border-radius: 10px;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Cormorant Garamond"', 'serif'],
+              sans: ['"Inter"', 'sans-serif'],
+            },
+            colors: {
+              'astro-bg': 'var(--c-astro-bg)',
+              'astro-card': 'var(--c-astro-card)',
+              'astro-gold': 'var(--c-astro-gold)',
+              'astro-gold-light': 'var(--c-astro-gold-light)',
+              'astro-text': 'var(--c-astro-text)',
+              'astro-subtext': 'var(--c-astro-subtext)',
+              'astro-border': 'var(--c-astro-border)',
+              'p-violet': 'var(--c-pastel-violet)',
+              'p-amber': 'var(--c-pastel-amber)',
+              'p-blue': 'var(--c-pastel-blue)',
+              'p-sage': 'var(--c-pastel-sage)',
+            },
+            boxShadow: {
+              'ambient': 'var(--shadow-ambient)',
+              'elevated': 'var(--shadow-elevated)',
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+              'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+              'pulse-soft': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'spin-slow': 'spin 20s linear infinite',
+              'spin-super-slow': 'spin 60s linear infinite',
+              'appear-rotate': 'appearRotate 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            },
+            keyframes: {
+              fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(30px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              appearRotate: {
+                '0%': { opacity: '0', transform: 'scale(0.8) rotate(-15deg)' },
+                '100%': { opacity: '1', transform: 'scale(1) rotate(0)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

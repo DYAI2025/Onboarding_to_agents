@@ -1,0 +1,495 @@
+
+import React, { useMemo, useState } from 'react';
+import { Transit } from '../types';
+
+interface Props {
+  transits: Transit[];
+  isLoading: boolean;
+  title?: string;
+}
+
+interface AugmentedTransit extends Transit {
+  x: number;
+  y: number;
+  radius: number;
+  totalDegree: number;
+}
+
+interface Aspect {
+  target: AugmentedTransit;
+  type: 'Conjunction' | 'Opposition' | 'Square' | 'Trine' | 'Sextile';
+  color: string;
+}
+
+const ASPECT_DEFS = [
+  { name: 'Conjunction', degree: 0, color: '#D4AF37', orb: 8 },
+  { name: 'Opposition', degree: 180, color: '#E11D48', orb: 8 },
+  { name: 'Square', degree: 90, color: '#F59E0B', orb: 7 },
+  { name: 'Trine', degree: 120, color: '#10B981', orb: 7 },
+  { name: 'Sextile', degree: 60, color: '#3B82F6', orb: 5 },
+];
+
+const PLANET_INSIGHTS: Record<string, string> = {
+  'Sun': 'Kernidentität und Lebenswille. Der zentrale Punkt der bewussten Wahrnehmung.',
+  'Moon': 'Emotionale Resonanz und Instinkt. Spiegelt die unbewussten Bedürfnisse wider.',
+  'Mercury': 'Kommunikation und kognitive Prozesse. Die Brücke zwischen Geist und Materie.',
+  'Venus': 'Wertesystem und Harmonie. Definiert die Anziehung und ästhetische Resonanz.',
+  'Mars': 'Antrieb und Durchsetzung. Die rohe Energie des Handelns und der Initiative.',
+  'Jupiter': 'Expansion und Sinnfindung. Der Kanal für Wachstum und philosophische Tiefe.',
+  'Saturn': 'Struktur und Grenze. Die Disziplin, die Form aus dem Chaos erschafft.',
+  'Uranus': 'Inspiration und Befreiung. Der plötzliche Blitz der Erkenntnis und Erneuerung.',
+  'Neptune': 'Transzendenz und Vision. Die Auflösung der Grenzen zum Universellen.',
+  'Pluto': 'Transformation und Macht. Die regenerative Kraft der tiefgreifenden Wandlung.'
+};
+
+const ZODIAC_ELEMENTS: Record<string, string> = {
+  "Aries": "Fire", "Leo": "Fire", "Sagittarius": "Fire",
+  "Taurus": "Earth", "Virgo": "Earth", "Capricorn": "Earth",
+  "Gemini": "Air", "Libra": "Air", "Aquarius": "Air",
+  "Cancer": "Water", "Scorpio": "Water", "Pisces": "Water"
+};
+
+const ZODIAC_ORDER = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+
+export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "Kosmisches Wetter" }) => {
+  const dateStr = new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  
+  const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
+  const [hoveredSign, setHoveredSign] = useState<string | null>(null);
+  const [selectedPlanet, setSelectedPlanet] = useState<AugmentedTransit | null>(null);
+
+  const planetCoords = useMemo((): AugmentedTransit[] => {
+    if (!transits || !Array.isArray(transits) || transits.length === 0) return [];
+    
+    return transits
+      .filter(t => t && t.sign)
+      .map((t, i) => {
+        const signIdx = ZODIAC_ORDER.indexOf(t.sign);
+        const safeSignIdx = signIdx === -1 ? 0 : signIdx;
+        const totalDegree = (safeSignIdx * 30) + (t.degree || 0);
+        const rad = (totalDegree - 90) * (Math.PI / 180); 
+        const radius = 35 + (i * 12); 
+        
+        return {
+          ...t,
+          x: 150 + Math.cos(rad) * radius,
+          y: 150 + Math.sin(rad) * radius,
+          radius,
+          totalDegree
+        };
+      });
+  }, [transits]);
+
+  const activePlanet = selectedPlanet || (hoveredPlanet ? planetCoords.find(p => p.body === hoveredPlanet) : null);
+
+  const activeAspects = useMemo(() => {
+    if (!activePlanet) return [];
+    const aspects: Aspect[] = [];
+    
+    planetCoords.forEach(p => {
+      if (p.body === activePlanet.body) return;
+      
+      let diff = Math.abs(activePlanet.totalDegree - p.totalDegree);
+      if (diff > 180) diff = 360 - diff;
+      
+      const foundAspect = ASPECT_DEFS.find(a => Math.abs(diff - a.degree) <= a.orb);
+      if (foundAspect) {
+        aspects.push({
+          target: p,
+          type: foundAspect.name as any,
+          color: foundAspect.color
+        });
+      }
+    });
+    
+    return aspects;
+  }, [activePlanet, planetCoords]);
+
+  const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
+    const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
+      const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+      return {
+        x: centerX + (r * Math.cos(angleInRadians)),
+        y: centerY + (r * Math.sin(angleInRadians))
+      };
+    };
+
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    return ["M", start.x, start.y, "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(" ");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-[#0B1221] border border-white/5 rounded-[3rem] p-12 overflow-hidden h-[700px] flex flex-col animate-pulse relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#161E2E_0%,_#0B1221_100%)] opacity-50"></div>
+        
+        {/* Skeleton Header */}
+        <div className="relative z-10 flex justify-between items-start mb-12">
+           <div className="space-y-4">
+              <div className="h-8 w-48 bg-white/10 rounded-lg"></div>
+              <div className="h-2 w-32 bg-white/5 rounded-full"></div>
+           </div>
+           <div className="h-4 w-24 bg-white/5 rounded-full"></div>
+        </div>
+
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+          {/* Skeleton Chart */}
+          <div className="lg:col-span-7 flex items-center justify-center py-10">
+            <div className="relative w-[350px] h-[350px] rounded-full border border-white/5 flex items-center justify-center">
+               <div className="absolute w-[20%] h-[20%] rounded-full bg-white/5 border border-white/10 animate-pulse"></div>
+               <div className="absolute w-[40%] h-[40%] rounded-full border border-dashed border-white/5"></div>
+               <div className="absolute w-[60%] h-[60%] rounded-full border border-dashed border-white/5"></div>
+               <div className="absolute w-[80%] h-[80%] rounded-full border border-dashed border-white/5"></div>
+               <div className="absolute w-full h-full rounded-full border-2 border-white/5 opacity-20"></div>
+               
+               {/* Ghost Planets */}
+               {[0, 45, 120, 200, 280].map((deg, i) => (
+                 <div 
+                   key={i}
+                   className="absolute w-3 h-3 rounded-full bg-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                   style={{
+                     transform: `rotate(${deg}deg) translate(${80 + i * 15}px)`
+                   }}
+                 ></div>
+               ))}
+            </div>
+          </div>
+
+          {/* Skeleton Detail Sidebar */}
+          <div className="lg:col-span-5 space-y-8">
+            <div className="h-[400px] w-full bg-white/5 border border-white/5 rounded-[2.5rem] p-8 space-y-6">
+               <div className="space-y-2">
+                 <div className="h-2 w-20 bg-white/5 rounded-full"></div>
+                 <div className="h-10 w-40 bg-white/10 rounded-xl"></div>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="h-16 bg-white/5 rounded-2xl border border-white/5"></div>
+                 <div className="h-16 bg-white/5 rounded-2xl border border-white/5"></div>
+               </div>
+               <div className="h-24 w-full bg-white/5 rounded-2xl"></div>
+               <div className="mt-auto h-4 w-full bg-white/5 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#0B1221] rounded-[3rem] p-8 md:p-12 text-white relative overflow-hidden shadow-elevated border border-white/5 animate-fade-in min-h-[700px] flex flex-col">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#161E2E_0%,_#0B1221_100%)]"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 pointer-events-none"></div>
+
+      <style>
+        {`
+          @keyframes dashMove { to { stroke-dashoffset: -20; } }
+          @keyframes aspectFlow { to { stroke-dashoffset: -100; } }
+          .orbit-path { stroke-dasharray: 1, 4; animation: dashMove 20s linear infinite; }
+          .orbit-path-active { stroke-dasharray: 5, 2; animation: dashMove 3s linear infinite; }
+          .aspect-line { animation: aspectFlow 30s linear infinite; }
+        `}
+      </style>
+
+      <div className="relative z-10 flex justify-between items-start mb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+             <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
+             <h3 className="font-serif text-3xl text-white">{title}</h3>
+          </div>
+          <p className="font-sans text-[10px] text-gray-400 uppercase tracking-[0.3em]">{dateStr}</p>
+        </div>
+        <div className="text-right">
+           <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Celestia 3D Engine</div>
+           <div className="text-[8px] text-astro-gold mt-1 italic opacity-60">Aspect_Matrix_Active</div>
+        </div>
+      </div>
+
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+        
+        <div className="lg:col-span-7 flex items-center justify-center py-10" style={{ perspective: '1500px' }}>
+          <div 
+            className="relative transition-transform duration-1000 ease-out preserve-3d"
+            style={{ 
+              transform: 'rotateX(58deg) rotateZ(0deg)',
+              width: '400px',
+              height: '400px'
+            }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+               <div 
+                 className="w-10 h-10 bg-yellow-100 rounded-full shadow-[0_0_50px_rgba(255,230,100,1)]"
+                 style={{ transform: 'rotateX(-58deg)' }}
+               >
+                  <div className="absolute inset-0 rounded-full bg-yellow-400 opacity-20 animate-pulse scale-150"></div>
+               </div>
+            </div>
+
+            <svg viewBox="0 0 300 300" className="w-full h-full overflow-visible absolute inset-0">
+              <defs>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                <linearGradient id="orbitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="rgba(212,175,55,0.4)" />
+                  <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
+                  <stop offset="100%" stopColor="rgba(212,175,55,0.4)" />
+                </linearGradient>
+                <linearGradient id="orbitGradientActive" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#D4AF37" />
+                  <stop offset="50%" stopColor="#FFF" />
+                  <stop offset="100%" stopColor="#D4AF37" />
+                </linearGradient>
+              </defs>
+
+              <g className="fill-none cursor-pointer">
+                {planetCoords.map((p, i) => {
+                  const isActive = hoveredPlanet === p.body || selectedPlanet?.body === p.body;
+                  return (
+                    <g key={`orbit-group-${p.body}`}>
+                      <circle 
+                        cx="150" cy="150" r={p.radius} 
+                        stroke="url(#orbitGradient)"
+                        strokeOpacity={isActive ? "0.6" : "0.05"}
+                        strokeWidth={isActive ? "4" : "1.5"}
+                        className="transition-all duration-700 pointer-events-none"
+                      />
+                      <circle 
+                        cx="150" cy="150" r={p.radius} 
+                        stroke={isActive ? "url(#orbitGradientActive)" : "white"}
+                        strokeOpacity={isActive ? "1" : "0.15"}
+                        strokeWidth={isActive ? "1" : "0.5"}
+                        filter={isActive ? "url(#glow)" : "none"}
+                        className={`transition-all duration-300 pointer-events-auto ${isActive ? 'orbit-path-active' : 'orbit-path'}`}
+                        onMouseEnter={() => { setHoveredPlanet(p.body); setHoveredSign(p.sign); }}
+                        onMouseLeave={() => { setHoveredPlanet(null); setHoveredSign(null); }}
+                        onClick={() => setSelectedPlanet(p)}
+                      />
+                    </g>
+                  );
+                })}
+              </g>
+
+              {/* Dynamic Aspect Lines */}
+              {activePlanet && (
+                <g className="animate-fade-in pointer-events-none">
+                   {activeAspects.map((asp, idx) => (
+                      <g key={`aspect-${activePlanet.body}-${asp.target.body}`}>
+                        <line 
+                          x1={activePlanet.x} y1={activePlanet.y} 
+                          x2={asp.target.x} y2={asp.target.y} 
+                          stroke={asp.color}
+                          strokeWidth="1.5"
+                          strokeDasharray="4 2"
+                          className="aspect-line"
+                          strokeOpacity="0.8"
+                        />
+                        <circle cx={activePlanet.x} cy={activePlanet.y} r="2" fill={asp.color} />
+                        <circle cx={asp.target.x} cy={asp.target.y} r="2" fill={asp.color} />
+                      </g>
+                   ))}
+                </g>
+              )}
+
+              <g className="cursor-pointer">
+                {ZODIAC_ORDER.map((sign, i) => {
+                  const startAngle = i * 30;
+                  const endAngle = (i + 1) * 30;
+                  const isHovered = hoveredSign === sign;
+                  return (
+                    <path
+                      key={`sector-${sign}`}
+                      d={describeArc(150, 150, 148, startAngle, endAngle)}
+                      stroke={isHovered ? "var(--c-astro-gold)" : "white"}
+                      strokeOpacity={isHovered ? "1" : "0.2"}
+                      strokeWidth={isHovered ? "6" : "2"}
+                      filter={isHovered ? "url(#glow)" : "none"}
+                      className="transition-all duration-300 pointer-events-auto fill-transparent hover:fill-astro-gold/10"
+                      onMouseEnter={() => setHoveredSign(sign)} 
+                      onMouseLeave={() => setHoveredSign(null)}
+                    />
+                  );
+                })}
+              </g>
+
+              {ZODIAC_ORDER.map((sign, i) => {
+                 const angle = (i * 30 - 90) * (Math.PI / 180);
+                 const x = 150 + Math.cos(angle) * 148;
+                 const y = 150 + Math.sin(angle) * 148;
+                 const isHovered = hoveredSign === sign;
+                 return (
+                   <g key={`label-${sign}`} className="pointer-events-none">
+                     <line x1={150 + Math.cos(angle) * 144} y1={150 + Math.sin(angle) * 144} x2={x} y2={y} stroke="white" strokeOpacity="0.4" />
+                     <text 
+                       x={150 + Math.cos(angle + 0.26) * 135} 
+                       y={150 + Math.sin(angle + 0.26) * 135} 
+                       className={`font-bold transition-all duration-300 ${isHovered ? 'fill-astro-gold text-[8px]' : 'fill-gray-400 text-[6px]'} uppercase tracking-tighter`}
+                       textAnchor="middle"
+                     >
+                       {sign.substring(0, 3)}
+                     </text>
+                   </g>
+                 );
+              })}
+            </svg>
+
+            {planetCoords.map((planet) => {
+              const isSelected = selectedPlanet?.body === planet.body;
+              const isHovered = hoveredPlanet === planet.body;
+              return (
+                <div 
+                  key={planet.body}
+                  className="absolute group/planet cursor-pointer transition-all duration-700 z-20"
+                  style={{
+                    left: `${(planet.x / 300) * 100}%`,
+                    top: `${(planet.y / 300) * 100}%`,
+                    transform: 'translate(-50%, -50%) rotateX(-58deg)' 
+                  }}
+                  onMouseEnter={() => { setHoveredPlanet(planet.body); setHoveredSign(planet.sign); }}
+                  onMouseLeave={() => { setHoveredPlanet(null); setHoveredSign(null); }}
+                  onClick={(e) => { e.stopPropagation(); setSelectedPlanet(isSelected ? null : planet); }}
+                >
+                  <div className={`
+                      rounded-full shadow-lg transition-all duration-500 relative
+                      ${planet.body === 'Sun' ? 'w-6 h-6 bg-yellow-400 shadow-[0_0_30px_rgba(250,204,21,1)]' : 
+                        planet.body === 'Moon' ? 'w-4 h-4 bg-gray-300 shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 
+                        planet.element === 'Fire' ? 'w-4 h-4 bg-red-500' :
+                        planet.element === 'Water' ? 'w-4 h-4 bg-blue-500' :
+                        planet.element === 'Air' ? 'w-4 h-4 bg-amber-300' : 
+                        'w-4 h-4 bg-emerald-500'
+                      }
+                      ${isSelected ? 'scale-[2.8] ring-4 ring-astro-gold shadow-[0_0_40px_rgba(212,175,55,1)]' : (isHovered ? 'scale-175 ring-2 ring-white/60' : '')}
+                  `}>
+                    {isSelected && <div className="absolute inset-0 rounded-full animate-ping bg-astro-gold/50"></div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="lg:col-span-5 h-full flex flex-col justify-center">
+           <div className={`bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-md transition-all duration-700 min-h-[450px] flex flex-col relative overflow-hidden ${activePlanet || hoveredSign ? 'border-astro-gold/40 shadow-[0_0_60px_rgba(212,175,55,0.25)]' : 'opacity-60'}`}>
+              <div className={`absolute -right-20 -bottom-20 w-64 h-64 rounded-full blur-[100px] transition-all duration-1000 ${
+                (activePlanet?.element || ZODIAC_ELEMENTS[hoveredSign || '']) === 'Fire' ? 'bg-red-500/10' :
+                (activePlanet?.element || ZODIAC_ELEMENTS[hoveredSign || '']) === 'Water' ? 'bg-blue-500/10' :
+                (activePlanet?.element || ZODIAC_ELEMENTS[hoveredSign || '']) === 'Air' ? 'bg-amber-500/10' :
+                'bg-emerald-500/10'
+              }`}></div>
+
+              {activePlanet ? (
+                <div className="animate-fade-in flex flex-col h-full relative z-10">
+                   <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <div className="text-astro-gold text-[10px] font-black tracking-[0.4em] uppercase mb-1">Planetare Analyse</div>
+                        <h4 className="font-serif text-5xl text-white tracking-tight">{activePlanet.body}</h4>
+                      </div>
+                      {selectedPlanet && (
+                        <button onClick={(e) => { e.stopPropagation(); setSelectedPlanet(null); }} className="p-3 hover:bg-white/10 rounded-full transition-all group/close">
+                           <svg className="w-6 h-6 text-gray-500 group-hover/close:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      )}
+                   </div>
+
+                   {/* Aspect Readout in HUD */}
+                   {activeAspects.length > 0 && (
+                     <div className="mb-6 animate-fade-in">
+                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-3 font-bold">Resonante Aspekte ({activeAspects.length})</div>
+                        <div className="flex flex-wrap gap-2">
+                           {activeAspects.map((asp, i) => (
+                             <div key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2 group hover:border-white/30 transition-all">
+                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: asp.color }}></div>
+                                <span className="text-[10px] text-gray-300 font-bold">{asp.type} zu {asp.target.body}</span>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                   )}
+
+                   <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-black/60 p-4 rounded-2xl border border-white/10 backdrop-blur-sm group/item hover:border-astro-gold/30 transition-colors">
+                         <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Zodiak</div>
+                         <div className="font-serif text-xl text-white">{activePlanet.sign} <span className="text-astro-gold italic">{activePlanet.degree}°</span></div>
+                      </div>
+                      <div className="bg-black/60 p-4 rounded-2xl border border-white/10 backdrop-blur-sm group/item hover:border-astro-gold/30 transition-colors">
+                         <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Kraft</div>
+                         <div className="font-serif text-xl text-astro-gold">{activePlanet.element}</div>
+                      </div>
+                   </div>
+
+                   <div className="mt-auto space-y-4">
+                      <div className="p-5 bg-white/5 border border-white/10 rounded-2xl shadow-inner">
+                         <p className="font-serif italic text-base text-gray-200 leading-relaxed">
+                           "{PLANET_INSIGHTS[activePlanet.body] || 'Planetare Schwingung in Harmonie.'}"
+                         </p>
+                      </div>
+                      <div className="flex items-center gap-3 text-[10px] font-mono text-gray-600 uppercase tracking-widest">
+                         <span className="text-astro-gold animate-pulse">●</span> Matrix_State: SYNCED
+                         <span className="ml-auto">Asp_Check: OK</span>
+                      </div>
+                   </div>
+                </div>
+              ) : hoveredSign ? (
+                <div className="animate-fade-in flex flex-col h-full relative z-10">
+                   <div className="mb-10">
+                      <div className="text-astro-gold text-[10px] font-black tracking-[0.4em] uppercase mb-1">Fokus-Sektor</div>
+                      <h4 className="font-serif text-6xl text-white tracking-tight">{hoveredSign}</h4>
+                   </div>
+                   <div className="space-y-6">
+                      <div className="bg-black/40 p-6 rounded-2xl border border-astro-gold/40 flex justify-between items-center group shadow-lg">
+                         <span className="text-[12px] uppercase tracking-widest font-bold text-gray-300 group-hover:text-astro-gold transition-colors">Primäres Element</span>
+                         <span className="font-serif text-4xl text-astro-gold">{ZODIAC_ELEMENTS[hoveredSign]}</span>
+                      </div>
+                      <div className="p-8 border-l-4 border-astro-gold/50 bg-white/5 rounded-r-3xl shadow-inner">
+                         <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3 font-bold">Essenz</h5>
+                         <p className="font-serif italic text-2xl text-gray-200 leading-relaxed">
+                            {hoveredSign === 'Aries' ? 'Der feurige Funke, der den kosmischen Reigen entfacht.' : 
+                             hoveredSign === 'Pisces' ? 'Die transzendente Tiefe, in der sich alle Seelen spiegeln.' :
+                             `Ein kraftvoller Ausdruck der ${ZODIAC_ELEMENTS[hoveredSign]}-Energie.`}
+                         </p>
+                      </div>
+                   </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 group cursor-pointer" onClick={() => setSelectedPlanet(planetCoords[0])}>
+                   <div className="w-20 h-20 rounded-full border border-dashed border-white/20 flex items-center justify-center text-white/10 text-4xl mb-6 group-hover:scale-110 group-hover:border-astro-gold/40 transition-all duration-700 shadow-inner">✦</div>
+                   <h4 className="font-serif text-2xl text-white/60 mb-3 italic group-hover:text-white/90 transition-colors tracking-wide">Sphärenharmonie</h4>
+                   <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] leading-relaxed max-w-[250px] font-light">
+                     Bewege den Cursor über Orbits oder Zeichen, um energetische Aspekte und planetare Muster zu visualisieren.
+                   </p>
+                </div>
+              )}
+           </div>
+        </div>
+      </div>
+      
+      {/* Aspect Legend */}
+      <div className="mt-8 pt-8 border-t border-white/5 flex flex-col items-center gap-6 relative z-10">
+        <div className="flex flex-wrap gap-8 justify-center">
+           {ASPECT_DEFS.map(asp => (
+             <div key={asp.name} className="flex items-center gap-2.5 opacity-40 hover:opacity-100 transition-opacity cursor-help" title={`${asp.name}: ${asp.degree}° (+/- ${asp.orb}° Orb)`}>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: asp.color }}></div>
+                <span className="text-[9px] uppercase tracking-[0.2em] font-black text-gray-400">{asp.name}</span>
+             </div>
+           ))}
+        </div>
+        <div className="flex gap-12 justify-center opacity-60">
+           {['Fire', 'Earth', 'Air', 'Water'].map(el => {
+             const isActive = (activePlanet?.element === el) || (hoveredSign && ZODIAC_ELEMENTS[hoveredSign] === el);
+             return (
+               <div key={el} className={`flex items-center gap-3 transition-all duration-500 ${isActive ? 'opacity-100 scale-110' : 'opacity-25'}`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${ el === 'Fire' ? 'bg-red-500' : el === 'Earth' ? 'bg-emerald-500' : el === 'Air' ? 'bg-amber-300' : 'bg-blue-500' }`}></div>
+                  <span className={`text-[9px] uppercase tracking-[0.4em] font-black ${isActive ? 'text-astro-gold' : 'text-gray-400'}`}>{el}</span>
+               </div>
+             );
+           })}
+        </div>
+      </div>
+    </div>
+  );
+};
