@@ -38,8 +38,10 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [autoPulse, setAutoPulse] = useState(0);
 
   useEffect(() => {
+    // Scroll handler for parallax
     const handleScroll = () => {
       if (solarSigRef.current) {
         const rect = solarSigRef.current.getBoundingClientRect();
@@ -56,10 +58,24 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
       }
     };
     
+    // Auto-pulse animation loop
+    let frameId: number;
+    const animatePulse = () => {
+      const now = Date.now();
+      // Sine wave oscillating between 0 and 1 every ~4 seconds
+      const wave = (Math.sin(now / 2000) + 1) / 2;
+      setAutoPulse(wave);
+      frameId = requestAnimationFrame(animatePulse);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
+    animatePulse();
     
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(frameId);
+    };
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -107,10 +123,13 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
   const mouseDist = Math.sqrt(mousePos.x ** 2 + mousePos.y ** 2);
   const normalizedMouseDist = Math.min(mouseDist * 2, 1); // Normalize to roughly 0-1
 
-  // Mouse-reactive glow intensity: subtler at center, stronger at edges
-  const glowAlpha = (0.05 + Math.abs(scrollProgress) * 0.15) * (0.6 + normalizedMouseDist * 0.8);
-  const glowHueShift = 135 + scrollProgress * 45 + (normalizedMouseDist * 15);
-  const blurAmount = Math.abs(scrollProgress) * 4 + (normalizedMouseDist * 2);
+  // Dynamic Glow Calculation: Combine auto-pulse with mouse/scroll interaction
+  // Base intensity oscillates between 0.15 and 0.35 independently of interaction
+  const pulseFactor = 0.15 + (autoPulse * 0.2); 
+  const glowAlpha = (pulseFactor + Math.abs(scrollProgress) * 0.15 + (normalizedMouseDist * 0.4));
+  
+  const glowHueShift = 135 + scrollProgress * 45 + (normalizedMouseDist * 15) + (autoPulse * 20);
+  const blurAmount = Math.abs(scrollProgress) * 4 + (normalizedMouseDist * 2) + (autoPulse * 4);
 
   return (
     <div className="space-y-16 animate-fade-in">
@@ -196,12 +215,12 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
             ${isHovering ? 'border-astro-gold shadow-[0_45px_100px_rgba(212,175,55,0.25)]' : 'border-astro-border shadow-elevated'}
           `}
         >
-           {/* Primary Dynamic Gradient - Intensity and Hue reactive to Mouse Distance */}
+           {/* Primary Dynamic Gradient - Intensity and Hue reactive to Time (Pulse) and Mouse */}
            <div 
-             className="absolute inset-0 pointer-events-none transition-all duration-700 will-change-[background,opacity,filter]"
+             className="absolute inset-0 pointer-events-none transition-all duration-1000 will-change-[background,opacity,filter]"
              style={{
                background: `linear-gradient(${glowHueShift}deg, rgba(${baseGlowColor},${glowAlpha}) 0%, transparent 50%, rgba(245,243,255,${glowAlpha * 0.5}) 100%)`,
-               opacity: isHovering ? 1 : 0.7,
+               opacity: isHovering ? 1 : 0.8,
                filter: `blur(${blurAmount}px)`
              }}
            ></div>
@@ -210,17 +229,17 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
            <div 
              className="absolute inset-0 pointer-events-none transition-opacity duration-700"
              style={{
-               background: `radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,${0.02 * normalizedMouseDist}) 100%)`,
+               background: `radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,${0.02 * (0.5 + autoPulse * 0.5)}) 100%)`,
                opacity: isHovering ? 1 : 0
              }}
            ></div>
 
-           {/* Floating Light Bloom - Tracks Mouse Position */}
+           {/* Floating Light Bloom - Tracks Mouse & Pulses */}
            <div 
              className={`absolute inset-[-80%] transition-opacity duration-1000 pointer-events-none will-change-transform ${isHovering ? 'opacity-100' : 'opacity-60'}`}
              style={{ 
-               background: `radial-gradient(circle at ${50 + mousePos.x * 25}% ${50 + mousePos.y * 25}%, rgba(${baseGlowColor},${0.25 + normalizedMouseDist * 0.15}) 0%, rgba(253,248,232,0.01) 60%, transparent 90%)`,
-               transform: `translateY(${parallaxOffset * -5}px) scale(${1.4 + Math.abs(parallaxOffset) * 0.003}) rotate(${parallaxOffset * -0.15}deg)` 
+               background: `radial-gradient(circle at ${50 + mousePos.x * 25}% ${50 + mousePos.y * 25}%, rgba(${baseGlowColor},${0.15 + autoPulse * 0.1}) 0%, rgba(253,248,232,0.01) 60%, transparent 90%)`,
+               transform: `translateY(${parallaxOffset * -5}px) scale(${1.4 + Math.abs(parallaxOffset) * 0.003 + autoPulse * 0.05}) rotate(${parallaxOffset * -0.15}deg)` 
              }}
            ></div>
 
@@ -244,7 +263,13 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
                 </p>
               </div>
               
-              <div className={`mt-10 h-1 transition-all duration-700 bg-gradient-to-r from-transparent via-astro-gold/40 to-transparent ${isHovering ? 'w-48 opacity-100' : 'w-20 opacity-50'}`}></div>
+              <div 
+                className={`mt-10 h-1 transition-all duration-1000 bg-gradient-to-r from-transparent via-astro-gold/40 to-transparent`}
+                style={{
+                  width: isHovering ? '12rem' : '5rem',
+                  opacity: 0.5 + autoPulse * 0.5
+                }}
+              ></div>
            </div>
         </div>
 

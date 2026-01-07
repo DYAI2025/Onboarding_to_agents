@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { InputCard } from './components/InputCard';
@@ -6,12 +7,13 @@ import { ResultSymbol } from './components/ResultSymbol';
 import { QuizView } from './components/QuizView';
 import { CharacterDashboard } from './components/CharacterDashboard';
 import { CosmicWeather } from './components/CosmicWeather';
+import { AgentSelectionView } from './components/AgentSelectionView';
 import { BirthData, CalculationState, FusionResult, Transit } from './types';
 import { runFusionAnalysis } from './services/astroPhysics';
 import { generateSymbol, SymbolConfig } from './services/geminiService';
 import { fetchCurrentTransits, fetchTransitsForDate } from './services/transitService';
 
-type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard';
+type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -28,6 +30,7 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<FusionResult | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   const [transits, setTransits] = useState<Transit[]>([]);
   const [loadingTransits, setLoadingTransits] = useState(false);
@@ -81,10 +84,27 @@ export default function App() {
     }
   };
 
-  const enterCoreMatrix = () => {
+  const enterAgentSelection = () => {
     setShowCompletionModal(false);
+    setCurrentView('agent_selection');
+  };
+
+  const handleAgentSelect = (agentId: string) => {
+    setSelectedAgent(agentId);
+    // Simulate agent initialization delay if desired, or go straight to dashboard
     setCurrentView('character_dashboard');
   };
+
+  // If we are in the agent selection view, we render full screen without the sidebar layout for immersion
+  if (currentView === 'agent_selection' && analysisResult && generatedImage) {
+    return (
+      <AgentSelectionView 
+        result={analysisResult} 
+        symbolUrl={generatedImage} 
+        onAgentSelect={handleAgentSelect} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-astro-bg text-astro-text pl-20 md:pl-64 transition-all duration-300 relative">
@@ -101,9 +121,11 @@ export default function App() {
              <div className="mb-8">
                <div className="w-20 h-20 mx-auto bg-astro-text text-white rounded-full flex items-center justify-center text-3xl mb-6 shadow-elevated animate-float">✦</div>
                <h3 className="font-serif text-3xl text-astro-text mb-4">Initialisierung Abgeschlossen</h3>
-               <p className="font-sans text-astro-subtext leading-relaxed">Du hast dein inneres System der Sterne benannt. Möchtest du es jetzt anfangen zu verstehen?</p>
+               <p className="font-sans text-astro-subtext leading-relaxed">Du hast dein inneres System der Sterne benannt. Wähle nun deinen Guide für die Reise.</p>
              </div>
-             <button onClick={enterCoreMatrix} className="w-full py-4 bg-astro-gold text-white font-serif italic text-xl rounded-xl shadow-lg hover:shadow-xl hover:bg-[#B89628] transition-all">Enter Core_Matrix</button>
+             <button onClick={enterAgentSelection} className="w-full py-4 bg-astro-gold text-white font-serif italic text-xl rounded-xl shadow-lg hover:shadow-xl hover:bg-[#B89628] transition-all">
+               Connect to Agents →
+             </button>
           </div>
         </div>
       )}

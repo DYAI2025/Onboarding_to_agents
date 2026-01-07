@@ -2,8 +2,8 @@
 import React from 'react';
 
 interface Props {
-  currentView: 'dashboard' | 'quizzes' | 'character_dashboard';
-  onNavigate: (view: 'dashboard' | 'quizzes' | 'character_dashboard') => void;
+  currentView: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
+  onNavigate: (view: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection') => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
 }
@@ -21,6 +21,9 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
     if (id === 'dashboard') onNavigate('dashboard');
     if (id === 'quizzes') onNavigate('quizzes');
     if (id === 'profile') onNavigate('character_dashboard');
+    // For now, if user clicks Entities/Agents in sidebar, we can navigate to agent selection if they have results, or just stay put if no results exist logic is handled in App.tsx
+    // But assuming the user wants to see the Agent Selection screen:
+    if (id === 'agents') onNavigate('agent_selection');
   };
 
   return (
@@ -37,7 +40,8 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
           const isActive = 
             (item.id === 'dashboard' && currentView === 'dashboard') ||
             (item.id === 'quizzes' && currentView === 'quizzes') ||
-            (item.id === 'profile' && currentView === 'character_dashboard');
+            (item.id === 'profile' && currentView === 'character_dashboard') ||
+            (item.id === 'agents' && currentView === 'agent_selection');
 
           return (
             <div 
