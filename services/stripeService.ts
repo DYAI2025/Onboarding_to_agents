@@ -24,7 +24,9 @@ export const createCheckoutSession = async (payload: CheckoutSessionPayload) => 
   });
 
   if (!response.ok) {
-    throw new Error('Stripe checkout session failed');
+    const errorBody = await response.text();
+    const details = errorBody ? ` - ${errorBody}` : '';
+    throw new Error(`Stripe checkout session failed: ${response.status} ${response.statusText}${details}`);
   }
 
   return response.json() as Promise<{ sessionId: string }>;
