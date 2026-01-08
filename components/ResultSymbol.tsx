@@ -34,26 +34,30 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
     return (
       <div className={`w-full h-full bg-gradient-to-br ${config.color} relative flex items-center justify-center overflow-hidden animate-appear-rotate`}>
          {/* Procedural Geometric Pattern */}
-         <div className="absolute inset-0 opacity-30">
+         <div className="absolute inset-0 opacity-40 mix-blend-overlay">
             <svg viewBox="0 0 100 100" className="w-full h-full animate-[spin_60s_linear_infinite]">
               <circle cx="50" cy="50" r="40" stroke="white" strokeWidth="0.5" strokeDasharray="4 4" fill="none" />
               <circle cx="50" cy="50" r="30" stroke="white" strokeWidth="0.5" strokeDasharray="2 2" fill="none" />
               <path d="M50 10 L90 50 L50 90 L10 50 Z" stroke="white" strokeWidth="0.5" fill="none" opacity="0.5" />
+              {/* Added 3D depth lines */}
+              <path d="M50 0 L50 100 M0 50 L100 50" stroke="white" strokeWidth="0.2" opacity="0.3" />
             </svg>
          </div>
          
          {/* Ambient Glow */}
-         <div className="absolute inset-0 bg-radial-gradient from-white/20 to-transparent pointer-events-none"></div>
+         <div className="absolute inset-0 bg-radial-gradient from-white/30 to-transparent pointer-events-none"></div>
 
-         {/* Central Symbol */}
-         <div className="relative z-10 text-white font-serif text-9xl drop-shadow-[0_0_15px_rgba(0,0,0,0.3)] transform hover:scale-110 transition-transform duration-500 cursor-default">
-            {config.symbol}
+         {/* Central Symbol with Glass Effect */}
+         <div className="relative z-10 w-24 h-24 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.3)] transform hover:scale-110 transition-transform duration-500 cursor-default">
+            <div className="text-white font-serif text-6xl drop-shadow-md">
+               {config.symbol}
+            </div>
          </div>
 
          {/* Label */}
          <div className="absolute bottom-8 left-0 right-0 text-center">
-            <div className="inline-block px-3 py-1 bg-black/20 backdrop-blur-sm rounded-full border border-white/20">
-               <span className="text-[10px] uppercase tracking-[0.3em] text-white font-black">{safeSign} Essence</span>
+            <div className="inline-block px-3 py-1 bg-black/30 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
+               <span className="text-[10px] uppercase tracking-[0.3em] text-white font-black">{safeSign} Protocol</span>
             </div>
          </div>
       </div>
@@ -68,11 +72,10 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
 
         <div className="mb-12 relative group w-full flex justify-center items-center overflow-visible z-10">
           {/* Cosmic Aura Glow - Adjusted for centered focus */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-gradient-to-b from-astro-gold/20 to-transparent rounded-full blur-[90px] opacity-60 animate-pulse-soft pointer-events-none"></div>
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-gradient-to-b ${hasError ? 'from-red-500/10' : 'from-astro-gold/20'} to-transparent rounded-full blur-[90px] opacity-60 animate-pulse-soft pointer-events-none`}></div>
           
           {/* Responsive Image Container with Perfect Centering */}
-          {/* Using Aspect Ratio and Max Widths for fluid scaling */}
-          <div className="relative z-10 w-full max-w-[280px] sm:max-w-[340px] md:max-w-[400px] aspect-square flex items-center justify-center mx-auto">
+          <div className="relative z-10 w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] md:w-[400px] md:h-[400px] flex items-center justify-center mx-auto">
             {/* Inner Ring Glows - Centered */}
             <div className="absolute inset-[-15px] rounded-full border border-astro-gold/20 pointer-events-none animate-spin-slow"></div>
             <div className="absolute inset-[-30px] rounded-full border border-astro-gold/10 pointer-events-none animate-[spin_40s_linear_infinite_reverse]"></div>
@@ -82,12 +85,14 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
               {hasError ? (
                 renderFallbackSymbol()
               ) : (
-                <img 
-                  src={imageUrl} 
-                  alt="Generated Cosmic Symbol" 
-                  className="w-full h-full object-cover filter brightness-105 contrast-110 animate-appear-rotate"
-                  onError={() => setHasError(true)}
-                />
+                <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                   <img 
+                    src={imageUrl} 
+                    alt="Generated Cosmic Symbol" 
+                    className="w-[110%] h-[110%] max-w-none object-cover filter brightness-105 contrast-110 animate-appear-rotate transition-transform duration-700 group-hover:scale-110"
+                    onError={() => setHasError(true)}
+                  />
+                </div>
               )}
               {/* Internal Gloss Overlay - Only if not using fallback (fallback has its own) */}
               {!hasError && <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 via-transparent to-black/5 pointer-events-none z-20"></div>}
@@ -96,13 +101,13 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
         </div>
         
         <div className="space-y-6 max-w-lg mb-10 relative z-10 mx-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full border border-astro-gold/30 bg-astro-gold/5 text-astro-gold text-[10px] uppercase tracking-[0.4em] font-black backdrop-blur-sm">
-            {hasError ? 'Emergency_Seal_Generated' : 'Visual_Confirmation'}
+          <div className={`inline-block px-4 py-1.5 rounded-full border ${hasError ? 'border-red-200 bg-red-50 text-red-600' : 'border-astro-gold/30 bg-astro-gold/5 text-astro-gold'} text-[10px] uppercase tracking-[0.4em] font-black backdrop-blur-sm`}>
+            {hasError ? '⚠ Visual_Link_Unstable' : 'Visual_Confirmation'}
           </div>
           <h3 className="font-serif text-4xl md:text-6xl text-astro-text leading-tight tracking-tight drop-shadow-sm">Dein Schicksal im Kosmos</h3>
           <p className="font-sans text-sm md:text-base text-astro-subtext leading-relaxed font-light px-4">
             {hasError 
-              ? "Die direkte Bildübertragung wurde unterbrochen, doch deine astrologische Signatur wurde erfolgreich in ein geometrisches Siegel synthetisiert."
+              ? `Verbindungsfehler zur Bild-Matrix. Ein resonantes geometrisches Ersatz-Siegel wurde basierend auf deiner Sonnen-Signatur (${sunSign || 'Unknown'}) generiert.`
               : "Deine Essenz wurde in ein kosmisches Siegel gewebt. Tritt in unsere Astrologie-Sphäre ein und entdecke die verborgenen Pfade deines Seins."}
           </p>
         </div>

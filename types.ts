@@ -1,3 +1,4 @@
+
 export interface BirthData {
   date: string;
   time: string;
@@ -16,6 +17,8 @@ export interface EasternAnalysis {
   yearElement: string;
   monthAnimal: string; // Simulated
   dayElement: string; // Simulated
+  dayStem?: string;
+  dayPolarity?: string;
 }
 
 export interface FusionResult {

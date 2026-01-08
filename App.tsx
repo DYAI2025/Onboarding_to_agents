@@ -8,12 +8,13 @@ import { QuizView } from './components/QuizView';
 import { CharacterDashboard } from './components/CharacterDashboard';
 import { CosmicWeather } from './components/CosmicWeather';
 import { AgentSelectionView } from './components/AgentSelectionView';
+import { MatrixDocsView } from './components/MatrixDocsView';
 import { BirthData, CalculationState, FusionResult, Transit } from './types';
 import { runFusionAnalysis } from './services/astroPhysics';
 import { generateSymbol, SymbolConfig } from './services/geminiService';
 import { fetchCurrentTransits, fetchTransitsForDate } from './services/transitService';
 
-type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
+type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -49,6 +50,7 @@ export default function App() {
 
   const [transits, setTransits] = useState<Transit[]>([]);
   const [loadingTransits, setLoadingTransits] = useState(false);
+  const [transitDate, setTransitDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const loadTransits = async () => {
@@ -56,6 +58,7 @@ export default function App() {
       try {
         const data = await fetchCurrentTransits();
         if (data && data.length > 0) setTransits(data);
+        setTransitDate(new Date()); // Ensure it shows today's date initially
       } catch (e) {
         console.error("Failed to load transits", e);
       } finally {
@@ -77,7 +80,10 @@ export default function App() {
         fetchTransitsForDate(dateObj)
       ]);
       setAnalysisResult(result);
-      if (birthTransits && birthTransits.length > 0) setTransits(birthTransits);
+      if (birthTransits && birthTransits.length > 0) {
+         setTransits(birthTransits);
+         setTransitDate(dateObj); // Update weather date to birth date
+      }
       setAstroState(CalculationState.COMPLETE);
     } catch (error) {
       setAstroState(CalculationState.ERROR);
@@ -150,7 +156,11 @@ export default function App() {
           <div className="flex items-center gap-2 text-astro-subtext text-xs font-sans tracking-widest uppercase font-bold">
             <span>Core_Logic_V5.0</span>
             <span className="text-astro-gold animate-pulse">•</span>
-            <span>{currentView === 'dashboard' ? 'FUSION_ACTIVE' : currentView === 'quizzes' ? 'KNOWLEDGE_VAULT' : 'ENTITY_MATRIX'}</span>
+            <span>
+              {currentView === 'dashboard' ? 'FUSION_ACTIVE' : 
+               currentView === 'quizzes' ? 'KNOWLEDGE_VAULT' : 
+               currentView === 'matrix' ? 'SYSTEM_DOCS' : 'ENTITY_MATRIX'}
+            </span>
           </div>
           <div className="hidden md:flex items-center gap-4">
              <div className="flex flex-col items-end mr-2">
@@ -179,6 +189,8 @@ export default function App() {
                <button onClick={() => setCurrentView('dashboard')} className="text-astro-gold underline">Zurück zum Dashboard</button>
              </div>
           )
+        ) : currentView === 'matrix' ? (
+           <MatrixDocsView />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 animate-fade-in">
             <div className="lg:col-span-4 space-y-10">
@@ -187,7 +199,7 @@ export default function App() {
             <div className="lg:col-span-8 space-y-12">
               {astroState === CalculationState.IDLE && (
                 <div className="space-y-12">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} />
+                  <CosmicWeather transits={transits} isLoading={loadingTransits} displayDate={transitDate} />
                   <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
                     <p className="font-serif italic text-lg text-astro-subtext">Geburtsdaten für individuelle Sphären-Projektion erforderlich.</p>
                   </div>
@@ -200,12 +212,18 @@ export default function App() {
               )}
               {(astroState !== CalculationState.IDLE && astroState !== CalculationState.ERROR) && analysisResult && (
                 <div className="space-y-12 animate-fade-in-up">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} title="Deine Celestia Matrix" />
+                  <CosmicWeather 
+                    transits={transits} 
+                    isLoading={loadingTransits} 
+                    displayDate={transitDate}
+                    title="Deine Celestia Matrix" 
+                  />
                   <AnalysisView 
                     result={analysisResult} 
                     state={astroState}
                     onGenerateImage={handleGenerateImage}
                     onNavigateToQuizzes={() => setCurrentView('quizzes')}
+                    transits={transits}
                   />
                 </div>
               )}

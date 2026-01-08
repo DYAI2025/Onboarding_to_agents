@@ -1,11 +1,12 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { Transit } from '../types';
 
 interface Props {
   transits: Transit[];
   isLoading: boolean;
   title?: string;
+  displayDate?: Date; // New prop to control the displayed date
 }
 
 interface AugmentedTransit extends Transit {
@@ -49,26 +50,99 @@ const ZODIAC_ELEMENTS: Record<string, string> = {
   "Cancer": "Water", "Scorpio": "Water", "Pisces": "Water"
 };
 
+const ELEMENT_COLORS: Record<string, string> = {
+  "Fire": "#EF4444",
+  "Earth": "#10B981",
+  "Air": "#F59E0B",
+  "Water": "#3B82F6"
+};
+
+// 3D Gradients for Plastic Look
+const BODY_STYLES: Record<string, any> = {
+  'Sun': {
+    background: 'radial-gradient(circle at 35% 35%, #FFFBEB 0%, #FCD34D 20%, #F59E0B 50%, #D97706 100%)',
+    boxShadow: '0 0 40px rgba(245, 158, 11, 0.6), inset -4px -4px 8px rgba(180, 83, 9, 0.5)'
+  },
+  'Moon': {
+    background: 'radial-gradient(circle at 35% 35%, #F3F4F6 0%, #D1D5DB 40%, #9CA3AF 100%)',
+    boxShadow: '0 0 15px rgba(255, 255, 255, 0.3), inset -3px -3px 6px rgba(0,0,0,0.5)'
+  },
+  'Fire': {
+    background: 'radial-gradient(circle at 30% 30%, #FCA5A5 0%, #EF4444 40%, #991B1B 100%)',
+    boxShadow: '0 0 10px rgba(239, 68, 68, 0.4), inset -3px -3px 5px rgba(0,0,0,0.4)'
+  },
+  'Water': {
+    background: 'radial-gradient(circle at 30% 30%, #93C5FD 0%, #3B82F6 40%, #1E40AF 100%)',
+    boxShadow: '0 0 10px rgba(59, 130, 246, 0.4), inset -3px -3px 5px rgba(0,0,0,0.4)'
+  },
+  'Air': {
+    background: 'radial-gradient(circle at 30% 30%, #FDE68A 0%, #F59E0B 40%, #B45309 100%)',
+    boxShadow: '0 0 10px rgba(245, 158, 11, 0.4), inset -3px -3px 5px rgba(0,0,0,0.4)'
+  },
+  'Earth': {
+    background: 'radial-gradient(circle at 30% 30%, #6EE7B7 0%, #10B981 40%, #065F46 100%)',
+    boxShadow: '0 0 10px rgba(16, 185, 129, 0.4), inset -3px -3px 5px rgba(0,0,0,0.4)'
+  }
+};
+
 const ZODIAC_ORDER = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
 
-export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "Kosmisches Wetter" }) => {
-  const dateStr = new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "Kosmisches Wetter", displayDate }) => {
+  // Use the passed displayDate or fallback to now
+  const dateToUse = displayDate || new Date();
+  
+  const dateStr = dateToUse.toLocaleDateString('de-DE', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
   
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [hoveredSign, setHoveredSign] = useState<string | null>(null);
+  const [hoveredOrbit, setHoveredOrbit] = useState<string | null>(null);
   const [selectedPlanet, setSelectedPlanet] = useState<AugmentedTransit | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const planetCoords = useMemo((): AugmentedTransit[] => {
     if (!transits || !Array.isArray(transits) || transits.length === 0) return [];
     
-    return transits
+    // Filter and sort so Sun is processed but placed at center
+    const sortedTransits = [...transits].sort((a, b) => {
+        if (a.body === 'Sun') return -1;
+        if (b.body === 'Sun') return 1;
+        return 0;
+    });
+
+    let orbitIndex = 0;
+
+    return sortedTransits
       .filter(t => t && t.sign)
-      .map((t, i) => {
+      .map((t) => {
+        const isSun = t.body === 'Sun';
+        
+        // Sun is fixed at center (0,0 relative to 150,150)
+        if (isSun) {
+           return {
+             ...t,
+             x: 150,
+             y: 150,
+             radius: 0,
+             totalDegree: 0 // Irrelevant for center
+           };
+        }
+
         const signIdx = ZODIAC_ORDER.indexOf(t.sign);
         const safeSignIdx = signIdx === -1 ? 0 : signIdx;
         const totalDegree = (safeSignIdx * 30) + (t.degree || 0);
         const rad = (totalDegree - 90) * (Math.PI / 180); 
-        const radius = 35 + (i * 12); 
+        
+        // Increase radius step for other planets
+        const radius = 50 + (orbitIndex * 14); 
+        orbitIndex++;
         
         return {
           ...t,
@@ -88,7 +162,8 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
     
     planetCoords.forEach(p => {
       if (p.body === activePlanet.body) return;
-      
+      if (p.radius === 0 && activePlanet.radius === 0) return; // Ignore aspect if both are sun (impossible) or center
+
       let diff = Math.abs(activePlanet.totalDegree - p.totalDegree);
       if (diff > 180) diff = 360 - diff;
       
@@ -120,12 +195,20 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
     return ["M", start.x, start.y, "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(" ");
   };
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (chartRef.current) {
+      const rect = chartRef.current.getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="bg-[#0B1221] border border-white/5 rounded-[3rem] p-12 overflow-hidden h-[700px] flex flex-col animate-pulse relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#161E2E_0%,_#0B1221_100%)] opacity-50"></div>
-        
-        {/* Skeleton Header */}
         <div className="relative z-10 flex justify-between items-start mb-12">
            <div className="space-y-4">
               <div className="h-8 w-48 bg-white/10 rounded-lg"></div>
@@ -133,43 +216,15 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
            </div>
            <div className="h-4 w-24 bg-white/5 rounded-full"></div>
         </div>
-
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-          {/* Skeleton Chart */}
           <div className="lg:col-span-7 flex items-center justify-center py-10">
             <div className="relative w-[350px] h-[350px] rounded-full border border-white/5 flex items-center justify-center">
                <div className="absolute w-[20%] h-[20%] rounded-full bg-white/5 border border-white/10 animate-pulse"></div>
-               <div className="absolute w-[40%] h-[40%] rounded-full border border-dashed border-white/5"></div>
-               <div className="absolute w-[60%] h-[60%] rounded-full border border-dashed border-white/5"></div>
-               <div className="absolute w-[80%] h-[80%] rounded-full border border-dashed border-white/5"></div>
-               <div className="absolute w-full h-full rounded-full border-2 border-white/5 opacity-20"></div>
-               
-               {/* Ghost Planets */}
-               {[0, 45, 120, 200, 280].map((deg, i) => (
-                 <div 
-                   key={i}
-                   className="absolute w-3 h-3 rounded-full bg-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
-                   style={{
-                     transform: `rotate(${deg}deg) translate(${80 + i * 15}px)`
-                   }}
-                 ></div>
-               ))}
             </div>
           </div>
-
-          {/* Skeleton Detail Sidebar */}
           <div className="lg:col-span-5 space-y-8">
             <div className="h-[400px] w-full bg-white/5 border border-white/5 rounded-[2.5rem] p-8 space-y-6">
-               <div className="space-y-2">
-                 <div className="h-2 w-20 bg-white/5 rounded-full"></div>
-                 <div className="h-10 w-40 bg-white/10 rounded-xl"></div>
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="h-16 bg-white/5 rounded-2xl border border-white/5"></div>
-                 <div className="h-16 bg-white/5 rounded-2xl border border-white/5"></div>
-               </div>
-               <div className="h-24 w-full bg-white/5 rounded-2xl"></div>
-               <div className="mt-auto h-4 w-full bg-white/5 rounded-full"></div>
+               <div className="space-y-2"><div className="h-2 w-20 bg-white/5 rounded-full"></div><div className="h-10 w-40 bg-white/10 rounded-xl"></div></div>
             </div>
           </div>
         </div>
@@ -198,7 +253,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
              <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
              <h3 className="font-serif text-3xl text-white">{title}</h3>
           </div>
-          <p className="font-sans text-[10px] text-gray-400 uppercase tracking-[0.3em]">{dateStr}</p>
+          <p className="font-sans text-[10px] text-gray-400 uppercase tracking-[0.3em] font-medium">{dateStr}</p>
         </div>
         <div className="text-right">
            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Celestia 3D Engine</div>
@@ -206,7 +261,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10" ref={chartRef} onMouseMove={handleMouseMove}>
         
         <div className="lg:col-span-7 flex items-center justify-center py-10" style={{ perspective: '1500px' }}>
           <div 
@@ -217,14 +272,15 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
               height: '400px'
             }}
           >
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-               <div 
-                 className="w-10 h-10 bg-yellow-100 rounded-full shadow-[0_0_50px_rgba(255,230,100,1)]"
-                 style={{ transform: 'rotateX(-58deg)' }}
-               >
-                  <div className="absolute inset-0 rounded-full bg-yellow-400 opacity-20 animate-pulse scale-150"></div>
-               </div>
-            </div>
+            {/* Tooltip Overlay */}
+            {(hoveredSign || hoveredOrbit) && (
+              <div 
+                className="absolute z-50 pointer-events-none transition-all duration-200 ease-out flex flex-col items-center"
+                style={{
+                   display: 'none' // Handled below outside the 3D transform for better readability
+                }}
+              ></div>
+            )}
 
             <svg viewBox="0 0 300 300" className="w-full h-full overflow-visible absolute inset-0">
               <defs>
@@ -250,24 +306,29 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
               <g className="fill-none cursor-pointer">
                 {planetCoords.map((p, i) => {
                   const isActive = hoveredPlanet === p.body || selectedPlanet?.body === p.body;
+                  const isOrbitHovered = hoveredOrbit === p.body;
+                  
+                  // Do not draw orbit for the Sun (radius 0)
+                  if (p.radius === 0) return null;
+
                   return (
                     <g key={`orbit-group-${p.body}`}>
                       <circle 
                         cx="150" cy="150" r={p.radius} 
                         stroke="url(#orbitGradient)"
-                        strokeOpacity={isActive ? "0.6" : "0.05"}
-                        strokeWidth={isActive ? "4" : "1.5"}
+                        strokeOpacity={isActive || isOrbitHovered ? "0.6" : "0.05"}
+                        strokeWidth={isActive || isOrbitHovered ? "4" : "1.5"}
                         className="transition-all duration-700 pointer-events-none"
                       />
                       <circle 
                         cx="150" cy="150" r={p.radius} 
-                        stroke={isActive ? "url(#orbitGradientActive)" : "white"}
-                        strokeOpacity={isActive ? "1" : "0.15"}
-                        strokeWidth={isActive ? "1" : "0.5"}
-                        filter={isActive ? "url(#glow)" : "none"}
-                        className={`transition-all duration-300 pointer-events-auto ${isActive ? 'orbit-path-active' : 'orbit-path'}`}
-                        onMouseEnter={() => { setHoveredPlanet(p.body); setHoveredSign(p.sign); }}
-                        onMouseLeave={() => { setHoveredPlanet(null); setHoveredSign(null); }}
+                        stroke={isActive ? "url(#orbitGradientActive)" : (isOrbitHovered ? "white" : "white")}
+                        strokeOpacity={isActive || isOrbitHovered ? "1" : "0.15"}
+                        strokeWidth={isActive || isOrbitHovered ? "1.5" : "0.5"}
+                        filter={isActive || isOrbitHovered ? "url(#glow)" : "none"}
+                        className={`transition-all duration-300 pointer-events-auto ${isActive || isOrbitHovered ? 'orbit-path-active' : 'orbit-path'}`}
+                        onMouseEnter={() => { setHoveredOrbit(p.body); }}
+                        onMouseLeave={() => { setHoveredOrbit(null); }}
                         onClick={() => setSelectedPlanet(p)}
                       />
                     </g>
@@ -301,15 +362,17 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                   const startAngle = i * 30;
                   const endAngle = (i + 1) * 30;
                   const isHovered = hoveredSign === sign;
+                  const elementColor = ELEMENT_COLORS[ZODIAC_ELEMENTS[sign]];
+                  
                   return (
                     <path
                       key={`sector-${sign}`}
                       d={describeArc(150, 150, 148, startAngle, endAngle)}
-                      stroke={isHovered ? "var(--c-astro-gold)" : "white"}
-                      strokeOpacity={isHovered ? "1" : "0.2"}
-                      strokeWidth={isHovered ? "6" : "2"}
+                      stroke={isHovered ? elementColor : "white"}
+                      strokeOpacity={isHovered ? "0.8" : "0.2"}
+                      strokeWidth={isHovered ? "8" : "2"}
                       filter={isHovered ? "url(#glow)" : "none"}
-                      className="transition-all duration-300 pointer-events-auto fill-transparent hover:fill-astro-gold/10"
+                      className="transition-all duration-300 pointer-events-auto fill-transparent hover:fill-white/5"
                       onMouseEnter={() => setHoveredSign(sign)} 
                       onMouseLeave={() => setHoveredSign(null)}
                     />
@@ -322,13 +385,16 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                  const x = 150 + Math.cos(angle) * 148;
                  const y = 150 + Math.sin(angle) * 148;
                  const isHovered = hoveredSign === sign;
+                 const elementColor = ELEMENT_COLORS[ZODIAC_ELEMENTS[sign]];
+
                  return (
                    <g key={`label-${sign}`} className="pointer-events-none">
-                     <line x1={150 + Math.cos(angle) * 144} y1={150 + Math.sin(angle) * 144} x2={x} y2={y} stroke="white" strokeOpacity="0.4" />
+                     <line x1={150 + Math.cos(angle) * 144} y1={150 + Math.sin(angle) * 144} x2={x} y2={y} stroke={isHovered ? elementColor : "white"} strokeOpacity="0.4" />
                      <text 
                        x={150 + Math.cos(angle + 0.26) * 135} 
                        y={150 + Math.sin(angle + 0.26) * 135} 
-                       className={`font-bold transition-all duration-300 ${isHovered ? 'fill-astro-gold text-[8px]' : 'fill-gray-400 text-[6px]'} uppercase tracking-tighter`}
+                       className={`font-bold transition-all duration-300 ${isHovered ? 'text-[8px]' : 'fill-gray-400 text-[6px]'} uppercase tracking-tighter`}
+                       fill={isHovered ? elementColor : "gray"}
                        textAnchor="middle"
                      >
                        {sign.substring(0, 3)}
@@ -340,11 +406,26 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
 
             {planetCoords.map((planet) => {
               const isSelected = selectedPlanet?.body === planet.body;
-              const isHovered = hoveredPlanet === planet.body;
+              const isHovered = hoveredPlanet === planet.body || hoveredOrbit === planet.body;
+              
+              // Determine Style
+              let style = BODY_STYLES[planet.element] || BODY_STYLES['Earth'];
+              if (planet.body === 'Sun') style = BODY_STYLES['Sun'];
+              if (planet.body === 'Moon') style = BODY_STYLES['Moon'];
+
+              // Scale determination
+              const isSun = planet.body === 'Sun';
+              const baseSize = isSun ? 'w-10 h-10' : (planet.body === 'Moon' ? 'w-4 h-4' : 'w-5 h-5');
+              
+              // Scale factor
+              const scaleClass = isSelected 
+                 ? 'scale-[1.5] z-50' 
+                 : (isHovered ? 'scale-125 z-40' : 'z-20');
+
               return (
                 <div 
                   key={planet.body}
-                  className="absolute group/planet cursor-pointer transition-all duration-700 z-20"
+                  className={`absolute group/planet cursor-pointer transition-all duration-500 ${scaleClass}`}
                   style={{
                     left: `${(planet.x / 300) * 100}%`,
                     top: `${(planet.y / 300) * 100}%`,
@@ -354,24 +435,60 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                   onMouseLeave={() => { setHoveredPlanet(null); setHoveredSign(null); }}
                   onClick={(e) => { e.stopPropagation(); setSelectedPlanet(isSelected ? null : planet); }}
                 >
-                  <div className={`
-                      rounded-full shadow-lg transition-all duration-500 relative
-                      ${planet.body === 'Sun' ? 'w-6 h-6 bg-yellow-400 shadow-[0_0_30px_rgba(250,204,21,1)]' : 
-                        planet.body === 'Moon' ? 'w-4 h-4 bg-gray-300 shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 
-                        planet.element === 'Fire' ? 'w-4 h-4 bg-red-500' :
-                        planet.element === 'Water' ? 'w-4 h-4 bg-blue-500' :
-                        planet.element === 'Air' ? 'w-4 h-4 bg-amber-300' : 
-                        'w-4 h-4 bg-emerald-500'
-                      }
-                      ${isSelected ? 'scale-[2.8] ring-4 ring-astro-gold shadow-[0_0_40px_rgba(212,175,55,1)]' : (isHovered ? 'scale-175 ring-2 ring-white/60' : '')}
-                  `}>
-                    {isSelected && <div className="absolute inset-0 rounded-full animate-ping bg-astro-gold/50"></div>}
+                  <div 
+                    className={`${baseSize} rounded-full transition-all duration-500 relative`}
+                    style={{
+                        ...style,
+                        filter: isSelected ? 'brightness(1.2)' : 'none'
+                    }}
+                  >
+                    {isSelected && <div className="absolute inset-0 rounded-full animate-ping bg-white/40"></div>}
+                    {isSun && <div className="absolute inset-[-10px] rounded-full bg-orange-400/20 blur-md animate-pulse"></div>}
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* 3D Tooltip Overlay - Following Mouse in 2D Space */}
+        {(hoveredSign || hoveredOrbit) && (
+            <div 
+                className="absolute z-50 pointer-events-none px-4 py-3 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-fade-in flex flex-col gap-1"
+                style={{ 
+                    left: mousePos.x + 20, 
+                    top: mousePos.y - 20,
+                    transform: 'translateZ(100px)' 
+                }}
+            >
+                {hoveredSign && !hoveredOrbit && (
+                    <>
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ELEMENT_COLORS[ZODIAC_ELEMENTS[hoveredSign]] }}></span>
+                            <span className="font-serif text-lg text-white">{hoveredSign}</span>
+                        </div>
+                        <span className="text-[9px] uppercase tracking-widest font-black text-gray-400">
+                             {ZODIAC_ELEMENTS[hoveredSign]} Sektor
+                        </span>
+                    </>
+                )}
+                {hoveredOrbit && (
+                    <>
+                         <div className="flex items-center gap-2">
+                             <span className="font-serif text-lg text-white">{hoveredOrbit}</span>
+                         </div>
+                         <span className="text-[9px] uppercase tracking-widest font-black text-gray-400">
+                             {hoveredOrbit === 'Sun' ? 'Zentralgestirn' : 'Orbital Path'}
+                         </span>
+                         {planetCoords.find(p => p.body === hoveredOrbit) && (
+                             <span className="text-[9px] uppercase tracking-widest font-black text-astro-gold mt-1">
+                                 Currently in {planetCoords.find(p => p.body === hoveredOrbit)?.sign}
+                             </span>
+                         )}
+                    </>
+                )}
+            </div>
+        )}
 
         <div className="lg:col-span-5 h-full flex flex-col justify-center">
            <div className={`bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-md transition-all duration-700 min-h-[450px] flex flex-col relative overflow-hidden ${activePlanet || hoveredSign ? 'border-astro-gold/40 shadow-[0_0_60px_rgba(212,175,55,0.25)]' : 'opacity-60'}`}>
@@ -443,9 +560,9 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                    <div className="space-y-6">
                       <div className="bg-black/40 p-6 rounded-2xl border border-astro-gold/40 flex justify-between items-center group shadow-lg">
                          <span className="text-[12px] uppercase tracking-widest font-bold text-gray-300 group-hover:text-astro-gold transition-colors">Primäres Element</span>
-                         <span className="font-serif text-4xl text-astro-gold">{ZODIAC_ELEMENTS[hoveredSign]}</span>
+                         <span className="font-serif text-4xl text-astro-gold" style={{ color: ELEMENT_COLORS[ZODIAC_ELEMENTS[hoveredSign]] }}>{ZODIAC_ELEMENTS[hoveredSign]}</span>
                       </div>
-                      <div className="p-8 border-l-4 border-astro-gold/50 bg-white/5 rounded-r-3xl shadow-inner">
+                      <div className="p-8 border-l-4 border-astro-gold/50 bg-white/5 rounded-r-3xl shadow-inner" style={{ borderColor: ELEMENT_COLORS[ZODIAC_ELEMENTS[hoveredSign]] }}>
                          <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3 font-bold">Essenz</h5>
                          <p className="font-serif italic text-2xl text-gray-200 leading-relaxed">
                             {hoveredSign === 'Aries' ? 'Der feurige Funke, der den kosmischen Reigen entfacht.' : 
@@ -483,7 +600,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
              const isActive = (activePlanet?.element === el) || (hoveredSign && ZODIAC_ELEMENTS[hoveredSign] === el);
              return (
                <div key={el} className={`flex items-center gap-3 transition-all duration-500 ${isActive ? 'opacity-100 scale-110' : 'opacity-25'}`}>
-                  <div className={`w-2.5 h-2.5 rounded-full ${ el === 'Fire' ? 'bg-red-500' : el === 'Earth' ? 'bg-emerald-500' : el === 'Air' ? 'bg-amber-300' : 'bg-blue-500' }`}></div>
+                  <div className={`w-2.5 h-2.5 rounded-full`} style={{ backgroundColor: ELEMENT_COLORS[el] }}></div>
                   <span className={`text-[9px] uppercase tracking-[0.4em] font-black ${isActive ? 'text-astro-gold' : 'text-gray-400'}`}>{el}</span>
                </div>
              );

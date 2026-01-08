@@ -2,8 +2,8 @@
 import React from 'react';
 
 interface Props {
-  currentView: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
-  onNavigate: (view: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection') => void;
+  currentView: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix';
+  onNavigate: (view: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix') => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
 }
@@ -21,8 +21,6 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
     if (id === 'dashboard') onNavigate('dashboard');
     if (id === 'quizzes') onNavigate('quizzes');
     if (id === 'profile') onNavigate('character_dashboard');
-    // For now, if user clicks Entities/Agents in sidebar, we can navigate to agent selection if they have results, or just stay put if no results exist logic is handled in App.tsx
-    // But assuming the user wants to see the Agent Selection screen:
     if (id === 'agents') onNavigate('agent_selection');
   };
 
@@ -64,8 +62,11 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
       </div>
 
       <div className="mt-auto space-y-4 w-full pt-10 border-t border-astro-border/50">
-        <div className="flex items-center gap-5 text-astro-subtext p-3.5 cursor-pointer hover:text-astro-text transition-colors group">
-          <span className="text-xl group-hover:rotate-45 transition-transform duration-500">⚙</span>
+        <div 
+          onClick={() => onNavigate('matrix')}
+          className={`flex items-center gap-5 p-3.5 cursor-pointer transition-colors group rounded-2xl ${currentView === 'matrix' ? 'bg-astro-bg text-astro-gold' : 'text-astro-subtext hover:text-astro-text'}`}
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-700">⚙</span>
           <span className="hidden md:inline font-sans text-[10px] tracking-[0.2em] uppercase font-bold">Matrix</span>
         </div>
         <div 
