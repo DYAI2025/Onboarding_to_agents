@@ -8,12 +8,14 @@ import { QuizView } from './components/QuizView';
 import { CharacterDashboard } from './components/CharacterDashboard';
 import { CosmicWeather } from './components/CosmicWeather';
 import { AgentSelectionView } from './components/AgentSelectionView';
-import { BirthData, CalculationState, FusionResult, Transit } from './types';
+import { PricingView } from './components/PricingView';
+import { BillingView } from './components/BillingView';
+import { BirthData, CalculationState, FusionResult, Transit, UserSubscription } from './types';
 import { runFusionAnalysis } from './services/astroPhysics';
 import { generateSymbol, SymbolConfig } from './services/geminiService';
 import { fetchCurrentTransits, fetchTransitsForDate } from './services/transitService';
 
-type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
+type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'pricing' | 'billing';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -49,6 +51,18 @@ export default function App() {
 
   const [transits, setTransits] = useState<Transit[]>([]);
   const [loadingTransits, setLoadingTransits] = useState(false);
+
+  // Subscription & Payment State
+  const [userSubscription, setUserSubscription] = useState<UserSubscription>({
+    userId: 'user_mock_123',
+    tier: 'FREE',
+    status: 'active',
+    tokensRemaining: 2500,
+    tokensTotal: 2500,
+    currentPeriodStart: new Date(),
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    autoRenew: true,
+  });
 
   useEffect(() => {
     const loadTransits = async () => {
@@ -110,6 +124,18 @@ export default function App() {
     setCurrentView('character_dashboard');
   };
 
+  const handlePurchaseSuccess = () => {
+    // In production, fetch updated subscription from backend
+    setUserSubscription(prev => ({
+      ...prev,
+      tokensRemaining: prev.tokensRemaining + 500, // Mock token addition
+    }));
+  };
+
+  const handleNavigateToPricing = () => {
+    setCurrentView('pricing');
+  };
+
   // If we are in the agent selection view, we render full screen without the sidebar layout for immersion
   if (currentView === 'agent_selection' && analysisResult && generatedImage) {
     return (
@@ -123,11 +149,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-astro-bg text-astro-text pl-20 md:pl-64 transition-all duration-300 relative">
-      <Sidebar 
-        currentView={currentView} 
-        onNavigate={setCurrentView} 
+      <Sidebar
+        currentView={currentView}
+        onNavigate={setCurrentView}
         isDarkMode={isDarkMode}
         onToggleTheme={toggleTheme}
+        tokensRemaining={userSubscription.tokensRemaining}
       />
       
       {showCompletionModal && (
@@ -161,7 +188,14 @@ export default function App() {
           </div>
         </div>
 
-        {currentView === 'quizzes' ? (
+        {currentView === 'pricing' ? (
+          <PricingView onPurchaseSuccess={handlePurchaseSuccess} />
+        ) : currentView === 'billing' ? (
+          <BillingView
+            subscription={userSubscription}
+            onUpgrade={handleNavigateToPricing}
+          />
+        ) : currentView === 'quizzes' ? (
           <QuizView />
         ) : currentView === 'character_dashboard' ? (
           analysisResult && generatedImage ? (
