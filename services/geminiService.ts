@@ -1,24 +1,25 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? '';
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 export interface SymbolConfig {
   influence: 'western' | 'balanced' | 'eastern';
   transparentBackground?: boolean;
 }
 
-export const generateSymbol = async (basePrompt: string, config?: SymbolConfig): Promise<string> => {
-  try {
-    let finalPrompt = basePrompt;
-    
-    if (config) {
-      const influenceText = config.influence === 'western' 
-        ? "WEIGHTING: Prioritize Western Zodiac geometry and Solar signatures. Let the Sun sign's elemental nature dominate the visual form." 
-        : config.influence === 'eastern'
-        ? "WEIGHTING: Prioritize Ba Zi symbols and the Year Animal's essence. Let the eastern animalistic traits and five-element flow dominate the visual form."
-        : "WEIGHTING: Achieve a perfect 50/50 equilibrium between Western geometric abstraction and Eastern organic animal symbolism.";
+export const buildSymbolPrompt = (basePrompt: string, config?: SymbolConfig): string => {
+  if (!config) {
+    return basePrompt;
+  }
 
-      finalPrompt += `
+  const influenceText = config.influence === 'western' 
+    ? "WEIGHTING: Prioritize Western Zodiac geometry and Solar signatures. Let the Sun sign's elemental nature dominate the visual form." 
+    : config.influence === 'eastern'
+    ? "WEIGHTING: Prioritize Ba Zi symbols and the Year Animal's essence. Let the eastern animalistic traits and five-element flow dominate the visual form."
+    : "WEIGHTING: Achieve a perfect 50/50 equilibrium between Western geometric abstraction and Eastern organic animal symbolism.";
+
+  return `${basePrompt}
       
       CORE DIRECTIVE:
       - System Influence: ${influenceText}
@@ -26,8 +27,11 @@ export const generateSymbol = async (basePrompt: string, config?: SymbolConfig):
       
       The result must be a singular, balanced emblem. Destiny has chosen the specific details, but the user has requested this specific weight of heritage.
       `;
-    }
+};
 
+export const generateSymbol = async (basePrompt: string, config?: SymbolConfig): Promise<string> => {
+  try {
+    const finalPrompt = buildSymbolPrompt(basePrompt, config);
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: [
