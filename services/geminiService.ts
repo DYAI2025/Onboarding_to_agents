@@ -1,6 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 
-const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? '';
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!geminiApiKey) {
+  throw new Error(
+    "VITE_GEMINI_API_KEY is not set. Please configure the Gemini API key in your environment before using geminiService."
+  );
+}
+
 const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 export interface SymbolConfig {
