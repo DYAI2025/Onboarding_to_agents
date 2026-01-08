@@ -32,7 +32,7 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
     const config = ZODIAC_CONFIG[safeSign];
     
     return (
-      <div className={`w-full h-full bg-gradient-to-br ${config.color} relative flex items-center justify-center overflow-hidden animate-fade-in`}>
+      <div className={`w-full h-full bg-gradient-to-br ${config.color} relative flex items-center justify-center overflow-hidden animate-appear-rotate`}>
          {/* Procedural Geometric Pattern */}
          <div className="absolute inset-0 opacity-30">
             <svg viewBox="0 0 100 100" className="w-full h-full animate-[spin_60s_linear_infinite]">
@@ -62,7 +62,7 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
 
   return (
     <div className="mt-12 animate-fade-in-up flex justify-center w-full px-4">
-      <div className="border border-astro-border bg-astro-card p-10 md:p-14 rounded-[3rem] text-center w-full max-w-2xl shadow-elevated flex flex-col items-center relative overflow-hidden">
+      <div className="border border-astro-border bg-astro-card p-8 md:p-14 rounded-[3rem] text-center w-full max-w-2xl shadow-elevated flex flex-col items-center relative overflow-hidden">
         {/* Background decorative elements to enhance the container */}
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-astro-bg/50 to-transparent pointer-events-none"></div>
 
@@ -71,8 +71,8 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-gradient-to-b from-astro-gold/20 to-transparent rounded-full blur-[90px] opacity-60 animate-pulse-soft pointer-events-none"></div>
           
           {/* Responsive Image Container with Perfect Centering */}
-          {/* Using Aspect Ratio to ensure perfect circle scaling */}
-          <div className="relative z-10 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 max-w-full aspect-square flex items-center justify-center">
+          {/* Using Aspect Ratio and Max Widths for fluid scaling */}
+          <div className="relative z-10 w-full max-w-[280px] sm:max-w-[340px] md:max-w-[400px] aspect-square flex items-center justify-center mx-auto">
             {/* Inner Ring Glows - Centered */}
             <div className="absolute inset-[-15px] rounded-full border border-astro-gold/20 pointer-events-none animate-spin-slow"></div>
             <div className="absolute inset-[-30px] rounded-full border border-astro-gold/10 pointer-events-none animate-[spin_40s_linear_infinite_reverse]"></div>
@@ -95,7 +95,7 @@ export const ResultSymbol: React.FC<Props> = ({ imageUrl, synthesis, sunSign }) 
           </div>
         </div>
         
-        <div className="space-y-6 max-w-lg mb-10 relative z-10">
+        <div className="space-y-6 max-w-lg mb-10 relative z-10 mx-auto">
           <div className="inline-block px-4 py-1.5 rounded-full border border-astro-gold/30 bg-astro-gold/5 text-astro-gold text-[10px] uppercase tracking-[0.4em] font-black backdrop-blur-sm">
             {hasError ? 'Emergency_Seal_Generated' : 'Visual_Confirmation'}
           </div>

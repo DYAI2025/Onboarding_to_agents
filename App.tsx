@@ -17,11 +17,26 @@ type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selecti
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Initialize theme from localStorage
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('astro_theme');
+      return savedTheme === 'dark';
+    } catch (e) {
+      return false;
+    }
+  });
 
+  // Apply theme class and save to localStorage
   useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('astro_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('astro_theme', 'light');
+    }
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
