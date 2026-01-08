@@ -8,14 +8,12 @@ import { QuizView } from './components/QuizView';
 import { CharacterDashboard } from './components/CharacterDashboard';
 import { CosmicWeather } from './components/CosmicWeather';
 import { AgentSelectionView } from './components/AgentSelectionView';
-import { PricingView } from './components/PricingView';
-import { BillingView } from './components/BillingView';
-import { BirthData, CalculationState, FusionResult, Transit, UserSubscription } from './types';
+import { BirthData, CalculationState, FusionResult, Transit } from './types';
 import { runFusionAnalysis } from './services/astroPhysics';
 import { generateSymbol, SymbolConfig } from './services/geminiService';
 import { fetchCurrentTransits, fetchTransitsForDate } from './services/transitService';
 
-type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'pricing' | 'billing';
+type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -51,18 +49,7 @@ export default function App() {
 
   const [transits, setTransits] = useState<Transit[]>([]);
   const [loadingTransits, setLoadingTransits] = useState(false);
-
-  // Subscription & Payment State
-  const [userSubscription, setUserSubscription] = useState<UserSubscription>({
-    userId: 'user_mock_123',
-    tier: 'FREE',
-    status: 'active',
-    tokensRemaining: 2500,
-    tokensTotal: 2500,
-    currentPeriodStart: new Date(),
-    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    autoRenew: true,
-  });
+  const [transitDate, setTransitDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const loadTransits = async () => {
@@ -70,6 +57,7 @@ export default function App() {
       try {
         const data = await fetchCurrentTransits();
         if (data && data.length > 0) setTransits(data);
+        setTransitDate(new Date()); // Ensure it shows today's date initially
       } catch (e) {
         console.error("Failed to load transits", e);
       } finally {
@@ -91,7 +79,10 @@ export default function App() {
         fetchTransitsForDate(dateObj)
       ]);
       setAnalysisResult(result);
-      if (birthTransits && birthTransits.length > 0) setTransits(birthTransits);
+      if (birthTransits && birthTransits.length > 0) {
+         setTransits(birthTransits);
+         setTransitDate(dateObj); // Update weather date to birth date
+      }
       setAstroState(CalculationState.COMPLETE);
     } catch (error) {
       setAstroState(CalculationState.ERROR);
@@ -124,18 +115,6 @@ export default function App() {
     setCurrentView('character_dashboard');
   };
 
-  const handlePurchaseSuccess = () => {
-    // In production, fetch updated subscription from backend
-    setUserSubscription(prev => ({
-      ...prev,
-      tokensRemaining: prev.tokensRemaining + 500, // Mock token addition
-    }));
-  };
-
-  const handleNavigateToPricing = () => {
-    setCurrentView('pricing');
-  };
-
   // If we are in the agent selection view, we render full screen without the sidebar layout for immersion
   if (currentView === 'agent_selection' && analysisResult && generatedImage) {
     return (
@@ -149,12 +128,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-astro-bg text-astro-text pl-20 md:pl-64 transition-all duration-300 relative">
-      <Sidebar
-        currentView={currentView}
-        onNavigate={setCurrentView}
+      <Sidebar 
+        currentView={currentView} 
+        onNavigate={setCurrentView} 
         isDarkMode={isDarkMode}
         onToggleTheme={toggleTheme}
-        tokensRemaining={userSubscription.tokensRemaining}
       />
       
       {showCompletionModal && (
@@ -188,14 +166,7 @@ export default function App() {
           </div>
         </div>
 
-        {currentView === 'pricing' ? (
-          <PricingView onPurchaseSuccess={handlePurchaseSuccess} />
-        ) : currentView === 'billing' ? (
-          <BillingView
-            subscription={userSubscription}
-            onUpgrade={handleNavigateToPricing}
-          />
-        ) : currentView === 'quizzes' ? (
+        {currentView === 'quizzes' ? (
           <QuizView />
         ) : currentView === 'character_dashboard' ? (
           analysisResult && generatedImage ? (
@@ -221,7 +192,7 @@ export default function App() {
             <div className="lg:col-span-8 space-y-12">
               {astroState === CalculationState.IDLE && (
                 <div className="space-y-12">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} />
+                  <CosmicWeather transits={transits} isLoading={loadingTransits} displayDate={transitDate} />
                   <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
                     <p className="font-serif italic text-lg text-astro-subtext">Geburtsdaten für individuelle Sphären-Projektion erforderlich.</p>
                   </div>
@@ -234,7 +205,12 @@ export default function App() {
               )}
               {(astroState !== CalculationState.IDLE && astroState !== CalculationState.ERROR) && analysisResult && (
                 <div className="space-y-12 animate-fade-in-up">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} title="Deine Celestia Matrix" />
+                  <CosmicWeather 
+                    transits={transits} 
+                    isLoading={loadingTransits} 
+                    displayDate={transitDate}
+                    title="Deine Celestia Matrix" 
+                  />
                   <AnalysisView 
                     result={analysisResult} 
                     state={astroState}

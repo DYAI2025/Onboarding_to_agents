@@ -6,6 +6,7 @@ interface Props {
   transits: Transit[];
   isLoading: boolean;
   title?: string;
+  displayDate?: Date; // New prop to control the displayed date
 }
 
 interface AugmentedTransit extends Transit {
@@ -86,8 +87,18 @@ const BODY_STYLES: Record<string, any> = {
 
 const ZODIAC_ORDER = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
 
-export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "Kosmisches Wetter" }) => {
-  const dateStr = new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "Kosmisches Wetter", displayDate }) => {
+  // Use the passed displayDate or fallback to now
+  const dateToUse = displayDate || new Date();
+  
+  const dateStr = dateToUse.toLocaleDateString('de-DE', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
   
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [hoveredSign, setHoveredSign] = useState<string | null>(null);
@@ -242,7 +253,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
              <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
              <h3 className="font-serif text-3xl text-white">{title}</h3>
           </div>
-          <p className="font-sans text-[10px] text-gray-400 uppercase tracking-[0.3em]">{dateStr}</p>
+          <p className="font-sans text-[10px] text-gray-400 uppercase tracking-[0.3em] font-medium">{dateStr}</p>
         </div>
         <div className="text-right">
            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Celestia 3D Engine</div>
