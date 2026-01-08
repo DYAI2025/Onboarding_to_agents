@@ -8,12 +8,13 @@ import { QuizView } from './components/QuizView';
 import { CharacterDashboard } from './components/CharacterDashboard';
 import { CosmicWeather } from './components/CosmicWeather';
 import { AgentSelectionView } from './components/AgentSelectionView';
+import { MatrixDocsView } from './components/MatrixDocsView';
 import { BirthData, CalculationState, FusionResult, Transit } from './types';
 import { runFusionAnalysis } from './services/astroPhysics';
 import { generateSymbol, SymbolConfig } from './services/geminiService';
 import { fetchCurrentTransits, fetchTransitsForDate } from './services/transitService';
 
-type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection';
+type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -155,7 +156,11 @@ export default function App() {
           <div className="flex items-center gap-2 text-astro-subtext text-xs font-sans tracking-widest uppercase font-bold">
             <span>Core_Logic_V5.0</span>
             <span className="text-astro-gold animate-pulse">•</span>
-            <span>{currentView === 'dashboard' ? 'FUSION_ACTIVE' : currentView === 'quizzes' ? 'KNOWLEDGE_VAULT' : 'ENTITY_MATRIX'}</span>
+            <span>
+              {currentView === 'dashboard' ? 'FUSION_ACTIVE' : 
+               currentView === 'quizzes' ? 'KNOWLEDGE_VAULT' : 
+               currentView === 'matrix' ? 'SYSTEM_DOCS' : 'ENTITY_MATRIX'}
+            </span>
           </div>
           <div className="hidden md:flex items-center gap-4">
              <div className="flex flex-col items-end mr-2">
@@ -184,6 +189,8 @@ export default function App() {
                <button onClick={() => setCurrentView('dashboard')} className="text-astro-gold underline">Zurück zum Dashboard</button>
              </div>
           )
+        ) : currentView === 'matrix' ? (
+           <MatrixDocsView />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 animate-fade-in">
             <div className="lg:col-span-4 space-y-10">
@@ -216,6 +223,7 @@ export default function App() {
                     state={astroState}
                     onGenerateImage={handleGenerateImage}
                     onNavigateToQuizzes={() => setCurrentView('quizzes')}
+                    transits={transits}
                   />
                 </div>
               )}

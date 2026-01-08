@@ -1,6 +1,8 @@
 
 import { Transit } from '../types';
 
+const REMOTE_API_BASE = 'https://baziengine-v2.fly.dev';
+
 const ZODIAC_SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
@@ -12,6 +14,8 @@ const ZODIAC_ELEMENTS: Record<string, string> = {
   "Gemini": "Air", "Libra": "Air", "Aquarius": "Air",
   "Cancer": "Water", "Scorpio": "Water", "Pisces": "Water"
 };
+
+// --- Local Calculation Logic (Fallback) ---
 
 const getJulianDate = (date: Date) => {
   const time = date.getTime();
@@ -79,15 +83,11 @@ const getPlanetPosition = (date: Date, planet: string): { sign: string, degree: 
   };
 };
 
-export const fetchTransitsForDate = async (date: Date): Promise<Transit[]> => {
-  if (!date || isNaN(date.getTime())) {
-    date = new Date();
-  }
-
+const calculateLocalTransits = (date: Date): Transit[] => {
   const sun = getSunPosition(date);
   const moon = getMoonPosition(date);
 
-  const transits: Transit[] = [
+  return [
     { body: 'Sun', sign: sun.sign, degree: sun.degree, isRetrograde: false, element: ZODIAC_ELEMENTS[sun.sign] || "Fire" },
     { body: 'Moon', sign: moon.sign, degree: moon.degree, isRetrograde: false, element: ZODIAC_ELEMENTS[moon.sign] || "Water" },
     ...['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'].map(p => {
@@ -101,8 +101,56 @@ export const fetchTransitsForDate = async (date: Date): Promise<Transit[]> => {
       };
     })
   ];
+};
 
-  return transits;
+// --- Remote API Logic ---
+
+export const fetchTransitsForDate = async (date: Date): Promise<Transit[]> => {
+  if (!date || isNaN(date.getTime())) {
+    date = new Date();
+  }
+
+  // 1. Attempt Remote Fetch
+  try {
+    console.group(`[TransitService] Remote Sync Test: ${REMOTE_API_BASE}`);
+    console.log(`Target Date: ${date.toISOString()}`);
+    
+    // We try to fetch from a likely endpoint for astrological bodies
+    // Adjust endpoint as necessary if API docs become available (e.g., /api/bodies, /api/ephemeris)
+    const response = await fetch(`${REMOTE_API_BASE}/api/transits?date=${date.toISOString()}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        console.log("Remote Payload Received:", data);
+        
+        // Basic validation: Check if data is an array and looks like transits
+        if (Array.isArray(data) && data.length > 0 && data[0].body && data[0].sign) {
+            console.log("✅ Remote data validated. Using external engine.");
+            console.groupEnd();
+            // Ensure element field exists (if API omits it)
+            return data.map((t: any) => ({
+                ...t,
+                element: t.element || ZODIAC_ELEMENTS[t.sign] || "Fire"
+            }));
+        } else {
+             console.warn("⚠️ Remote data format unrecognized. Reverting to local core.");
+        }
+    } else {
+        console.warn(`⚠️ Remote API returned status: ${response.status} (${response.statusText})`);
+    }
+    console.groupEnd();
+
+  } catch (error) {
+    console.warn("❌ Remote Engine Unreachable. Network or CORS issue.", error);
+    console.log("Falling back to internal calculation module.");
+    console.groupEnd();
+  }
+
+  // 2. Fallback to Local Calculation
+  return calculateLocalTransits(date);
 };
 
 export const fetchCurrentTransits = async (): Promise<Transit[]> => {

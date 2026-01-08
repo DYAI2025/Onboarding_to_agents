@@ -1,6 +1,8 @@
+
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const REMOTE_ENGINE_URL = 'https://baziengine-v2.fly.dev';
 
 export interface SymbolConfig {
   influence: 'western' | 'balanced' | 'eastern';
@@ -8,6 +10,42 @@ export interface SymbolConfig {
 }
 
 export const generateSymbol = async (basePrompt: string, config?: SymbolConfig): Promise<string> => {
+  // 1. Attempt Instant Remote Generation (BaziEngine v2)
+  try {
+    console.log(`[SymbolService] Requesting instant symbol from ${REMOTE_ENGINE_URL}...`);
+    
+    // Construct simplified payload for the remote engine
+    const payload = {
+      prompt: basePrompt,
+      style: config?.influence || 'balanced',
+      mode: config?.transparentBackground ? 'transparent' : 'cinematic'
+    };
+
+    const response = await fetch(`${REMOTE_ENGINE_URL}/api/symbol`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json' 
+      },
+      body: JSON.stringify(payload),
+      // Set a timeout to fallback quickly if the specialized engine is sleeping
+      signal: AbortSignal.timeout(8000) 
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.imageUrl) {
+        console.log("✅ Instant symbol received from remote engine.");
+        return data.imageUrl;
+      }
+    } else {
+      console.warn(`⚠️ Remote engine returned ${response.status}. Switching to local GenAI.`);
+    }
+  } catch (error) {
+    console.warn("❌ Remote engine unreachable or timed out. Falling back to direct Gemini connection.", error);
+  }
+
+  // 2. Fallback: Local Client-Side GenAI (Google Gemini)
   try {
     let finalPrompt = basePrompt;
     

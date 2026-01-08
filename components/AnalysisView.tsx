@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FusionResult, CalculationState } from '../types';
+import { FusionResult, CalculationState, Transit } from '../types';
 import { SymbolConfig } from '../services/geminiService';
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
   state: CalculationState;
   onGenerateImage: (config: SymbolConfig) => void;
   onNavigateToQuizzes?: () => void;
+  transits?: Transit[];
 }
 
 const SUN_SIGN_INSIGHTS: Record<string, string> = {
@@ -25,7 +26,22 @@ const SUN_SIGN_INSIGHTS: Record<string, string> = {
   "Pisces": "Der grenzenlose Ozean. Du löst Grenzen auf, um mit dem universellen Traum zu verschmelzen."
 };
 
-export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, onNavigateToQuizzes }) => {
+const TRANSIT_THEMES: Record<string, string> = {
+  "Aries": "Handlung & Impuls",
+  "Taurus": "Werte & Substanz",
+  "Gemini": "Austausch & Vielfalt",
+  "Cancer": "Gefühl & Geborgenheit",
+  "Leo": "Ausdruck & Spiel",
+  "Virgo": "Ordnung & Dienst",
+  "Libra": "Balance & Begegnung",
+  "Scorpio": "Tiefe & Wandlung",
+  "Sagittarius": "Sinn & Weite",
+  "Capricorn": "Fokus & Struktur",
+  "Aquarius": "Vision & Freiheit",
+  "Pisces": "Traum & Einheit"
+};
+
+export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, onNavigateToQuizzes, transits }) => {
   const [config, setConfig] = useState<SymbolConfig>({
     influence: 'balanced',
     transparentBackground: true
@@ -39,6 +55,11 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [autoPulse, setAutoPulse] = useState(0);
+
+  // Transit Data Extraction
+  const currentSun = transits?.find(t => t.body === 'Sun');
+  const currentMoon = transits?.find(t => t.body === 'Moon');
+  const retrogrades = transits?.filter(t => t.isRetrograde && t.body !== 'Node');
 
   useEffect(() => {
     // Scroll handler for parallax
@@ -202,6 +223,67 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
             </div>
           </div>
         </div>
+
+        {/* --- CURRENT COSMIC CURRENTS SECTION --- */}
+        {currentSun && currentMoon && (
+          <div className="mb-16 bg-[#0B1221] text-white rounded-[2.5rem] p-10 border border-white/5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 opacity-50"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-8">
+                 <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
+                 <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400">Aktuelle Kosmische Strömungen</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Sun Transit */}
+                <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-2xl shadow-lg shrink-0">
+                    ☉
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Solare Saison</div>
+                    <div className="font-serif text-2xl mb-1">{currentSun.sign}</div>
+                    <div className="text-xs text-gray-300 font-light leading-relaxed">
+                      {TRANSIT_THEMES[currentSun.sign]}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Moon Transit */}
+                <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 flex items-center justify-center text-2xl text-slate-800 shadow-lg shrink-0">
+                    ☽
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Lunare Stimmung</div>
+                    <div className="font-serif text-2xl mb-1">{currentMoon.sign}</div>
+                    <div className="text-xs text-gray-300 font-light leading-relaxed">
+                      {TRANSIT_THEMES[currentMoon.sign]}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Retrograde Warning */}
+              {retrogrades && retrogrades.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-white/10">
+                   <div className="flex flex-wrap items-center gap-4">
+                      <span className="text-[9px] uppercase tracking-widest text-red-400 font-bold flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        Retrograde Phase:
+                      </span>
+                      {retrogrades.map(p => (
+                        <span key={p.body} className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-[10px] uppercase tracking-wider text-red-200 font-medium">
+                          {p.body} in {p.sign}
+                        </span>
+                      ))}
+                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* --- REFINED SOLAR SIGNATURE WITH DYNAMIC REACTIVE GLOW --- */}
         <div 
