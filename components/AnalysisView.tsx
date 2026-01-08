@@ -190,7 +190,9 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
               {[
                 { label: 'Wächter-Tier', val: result.eastern.yearAnimal },
                 { label: 'Basis-Element', val: result.eastern.yearElement },
-                { label: 'Tages-Meister', val: result.eastern.dayElement }
+                { label: 'Tages-Meister', val: result.eastern.dayElement },
+                ...(result.eastern.dayStem ? [{ label: 'Himmelsstamm', val: result.eastern.dayStem }] : []),
+                ...(result.eastern.dayPolarity ? [{ label: 'Polarität', val: result.eastern.dayPolarity }] : [])
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center">
                   <span className="text-astro-subtext uppercase tracking-widest font-bold">{item.label}</span>
