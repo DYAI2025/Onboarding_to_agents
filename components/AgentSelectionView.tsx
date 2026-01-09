@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { FusionResult } from '../types';
+import { SmartImage } from './SmartImage';
 
 interface Props {
   result: FusionResult;
@@ -75,10 +76,11 @@ export const AgentSelectionView: React.FC<Props> = ({ result, symbolUrl, onAgent
                  {/* Main Container */}
                  <div className="w-80 h-80 md:w-[28rem] md:h-[28rem] rounded-full border border-white/10 bg-[#1E293B]/20 backdrop-blur-xl shadow-[0_0_60px_rgba(0,0,0,0.5)] flex items-center justify-center relative overflow-hidden transition-transform duration-700 hover:scale-[1.02]">
                     <div className="w-[80%] h-[80%] rounded-full overflow-hidden relative z-10 border border-white/10 bg-black/40 shadow-2xl flex items-center justify-center">
-                         <img 
+                         <SmartImage 
                            src={symbolUrl} 
                            alt="Cosmic Fusion Symbol" 
                            className="w-[125%] h-[125%] max-w-none object-cover transition-transform duration-[2s] ease-in-out group-hover:scale-[1.35] group-hover:rotate-3" 
+                           priority={true}
                          />
                     </div>
                     {/* Gloss effect */}
