@@ -64,8 +64,11 @@ export const generateSymbol = async (basePrompt: string, config?: SymbolConfig):
       
       The result must be a singular, balanced emblem. Destiny has chosen the specific details, but the user has requested this specific weight of heritage.
       `;
-    }
+};
 
+export const generateSymbol = async (basePrompt: string, config?: SymbolConfig): Promise<string> => {
+  try {
+    const finalPrompt = buildSymbolPrompt(basePrompt, config);
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: [
