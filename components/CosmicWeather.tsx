@@ -183,6 +183,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
     return aspects;
   }, [activePlanet, planetCoords]);
 
+  // Helper to create SVG Arc Paths
   const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
     const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
       const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
@@ -212,29 +213,6 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
         tooltipRef.current.style.left = `${x + 20}px`;
         tooltipRef.current.style.top = `${y - 20}px`;
       }
-    }
-  };
-
-  // Increased debounce timeout to 100ms to prevent flickering when moving between adjacent elements
-  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-  const handleHover = (type: 'enter' | 'leave', planet?: string, sign?: string, orbit?: string) => {
-    if (hoverTimeout.current) {
-       clearTimeout(hoverTimeout.current);
-       hoverTimeout.current = null;
-    }
-
-    if (type === 'enter') {
-       if (planet !== undefined) setHoveredPlanet(planet);
-       if (sign !== undefined) setHoveredSign(sign);
-       if (orbit !== undefined) setHoveredOrbit(orbit);
-    } else {
-       // Grace period before clearing to prevent flicker
-       hoverTimeout.current = setTimeout(() => {
-          setHoveredPlanet(null);
-          setHoveredSign(null);
-          setHoveredOrbit(null);
-       }, 100);
     }
   };
 
@@ -336,33 +314,23 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
 
                   return (
                     <g key={`orbit-group-${p.body}`}>
-                      {/* Visual Orbit Background */}
-                      <circle 
-                        cx="150" cy="150" r={p.radius} 
-                        stroke="url(#orbitGradient)"
-                        strokeOpacity={isActive || isOrbitHovered ? "0.6" : "0.05"}
-                        strokeWidth={isActive || isOrbitHovered ? "4" : "1.5"}
-                        className="transition-all duration-700 pointer-events-none"
-                      />
-                      {/* Visual Orbit Foreground */}
-                      <circle 
-                        cx="150" cy="150" r={p.radius} 
-                        stroke={isActive ? "url(#orbitGradientActive)" : (isOrbitHovered ? "white" : "white")}
-                        strokeOpacity={isActive || isOrbitHovered ? "1" : "0.15"}
-                        strokeWidth={isActive || isOrbitHovered ? "1.5" : "0.5"}
-                        filter={isActive || isOrbitHovered ? "url(#glow)" : "none"}
-                        className={`transition-all duration-300 pointer-events-none ${isActive || isOrbitHovered ? 'orbit-path-active' : 'orbit-path'}`}
-                      />
-                      {/* Hit Target (Invisible, Thick) */}
+                      {/* Invisible Hit Area for Orbit - Thicker stroke */}
                       <circle 
                         cx="150" cy="150" r={p.radius} 
                         stroke="transparent"
-                        strokeWidth="24"
-                        fill="none"
-                        className="cursor-pointer pointer-events-auto"
-                        onMouseEnter={() => handleHover('enter', undefined, undefined, p.body)}
-                        onMouseLeave={() => handleHover('leave')}
-                        onClick={() => setSelectedPlanet(p)}
+                        strokeWidth="12"
+                        className="cursor-pointer"
+                        onMouseEnter={() => setHoveredOrbit(p.body)}
+                        onMouseLeave={() => setHoveredOrbit(null)}
+                      />
+                      {/* Visible Orbit Line with Gradient */}
+                      <circle 
+                        cx="150" cy="150" r={p.radius} 
+                        stroke={isActive ? "url(#orbitGradientActive)" : (isOrbitHovered ? "white" : "url(#orbitGradient)")}
+                        strokeOpacity={isActive || isOrbitHovered ? "1" : "0.3"}
+                        strokeWidth={isActive || isOrbitHovered ? "1.5" : "0.5"}
+                        filter={isActive || isOrbitHovered ? "url(#glow)" : "none"}
+                        className={`transition-all duration-300 pointer-events-none ${isActive || isOrbitHovered ? 'orbit-path-active' : 'orbit-path'}`}
                       />
                     </g>
                   );
@@ -398,27 +366,18 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                   const elementColor = ELEMENT_COLORS[ZODIAC_ELEMENTS[sign]];
                   
                   return (
-                    <React.Fragment key={`sector-${sign}`}>
-                      {/* Visual Path */}
-                      <path
-                        d={describeArc(150, 150, 148, startAngle, endAngle)}
-                        stroke={isHovered ? elementColor : "white"}
-                        strokeOpacity={isHovered ? "0.8" : "0.2"}
-                        strokeWidth={isHovered ? "8" : "2"}
-                        filter={isHovered ? "url(#glow)" : "none"}
-                        className="transition-all duration-300 pointer-events-none fill-transparent"
-                      />
-                      {/* Hit Path */}
-                      <path
-                        d={describeArc(150, 150, 148, startAngle, endAngle)}
-                        stroke="transparent"
-                        strokeWidth="30"
-                        fill="none"
-                        className="cursor-pointer pointer-events-auto"
-                        onMouseEnter={() => handleHover('enter', undefined, sign, undefined)}
-                        onMouseLeave={() => handleHover('leave')}
-                      />
-                    </React.Fragment>
+                    <path
+                      key={`sector-${sign}`}
+                      d={describeArc(150, 150, 148, startAngle, endAngle)}
+                      stroke={isHovered ? elementColor : "white"}
+                      strokeOpacity={isHovered ? "0.8" : "0.2"}
+                      strokeWidth={isHovered ? "8" : "2"}
+                      fill="transparent"
+                      filter={isHovered ? "url(#glow)" : "none"}
+                      className="transition-all duration-300 cursor-pointer"
+                      onMouseEnter={() => setHoveredSign(sign)}
+                      onMouseLeave={() => setHoveredSign(null)}
+                    />
                   );
                 })}
               </g>
@@ -472,11 +431,11 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                     left: `${(planet.x / 300) * 100}%`,
                     top: `${(planet.y / 300) * 100}%`,
                     transform: 'translate(-50%, -50%) rotateX(-58deg)',
-                    width: '32px', // Fixed hit area
-                    height: '32px'
+                    width: isSun ? '48px' : '32px', // Slight hit area adjustment
+                    height: isSun ? '48px' : '32px'
                   }}
-                  onMouseEnter={() => handleHover('enter', planet.body, planet.sign, undefined)}
-                  onMouseLeave={() => handleHover('leave')}
+                  onMouseEnter={() => setHoveredPlanet(planet.body)}
+                  onMouseLeave={() => setHoveredPlanet(null)}
                   onClick={(e) => { e.stopPropagation(); setSelectedPlanet(isSelected ? null : planet); }}
                 >
                   <div 

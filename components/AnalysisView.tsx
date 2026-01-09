@@ -153,25 +153,25 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
   const blurAmount = Math.abs(scrollProgress) * 4 + (normalizedMouseDist * 2) + (autoPulse * 4);
 
   return (
-    <div className="space-y-16 animate-fade-in">
-      <div className="text-center space-y-4">
+    <div className="space-y-12 md:space-y-16 animate-fade-in w-full">
+      <div className="text-center space-y-4 px-4 mb-16">
         <div className="inline-block px-3 py-1 border border-green-200 bg-green-50 text-green-700 text-[10px] tracking-widest uppercase rounded-full dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
           ✅ Systeme Synchronisiert
         </div>
-        <h2 className="font-serif text-5xl text-astro-text tracking-tight">Analyse & Erkenntnis</h2>
-        <p className="font-sans text-astro-subtext max-w-lg mx-auto leading-relaxed">
+        <h2 className="font-serif text-3xl md:text-5xl text-astro-text tracking-tight">Analyse & Erkenntnis</h2>
+        <p className="font-sans text-sm md:text-base text-astro-subtext max-w-2xl mx-auto leading-relaxed">
           Mysterium und Klarheit vereint. Finde deine wahre Natur durch reflektierte Analysen und persönliche Erkenntnisse.
         </p>
       </div>
 
-      <div className="bg-astro-card border border-astro-border rounded-[3rem] p-10 md:p-14 shadow-elevated relative overflow-hidden transition-all duration-700">
-        <div className="absolute top-8 left-8 z-20">
+      <div className="bg-astro-card border border-astro-border rounded-[2rem] md:rounded-[3rem] p-6 md:p-14 shadow-elevated relative overflow-hidden transition-all duration-700 w-full">
+        <div className="absolute top-4 left-4 md:top-8 md:left-8 z-20">
           <button 
             onClick={handleShare}
-            className="group flex items-center gap-2 px-5 py-2.5 bg-white/50 dark:bg-zinc-800/50 border border-astro-border rounded-full hover:border-astro-gold transition-all duration-300 shadow-sm"
+            className="group flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-white/50 dark:bg-zinc-800/50 border border-astro-border rounded-full hover:border-astro-gold transition-all duration-300 shadow-sm backdrop-blur-sm"
           >
-            <span className="text-sm group-hover:scale-110 transition-transform">📤</span>
-            <span className="font-sans text-[10px] uppercase tracking-widest font-bold text-astro-subtext group-hover:text-astro-gold">Exportieren</span>
+            <span className="text-xs md:text-sm group-hover:scale-110 transition-transform">📤</span>
+            <span className="font-sans text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-astro-subtext group-hover:text-astro-gold hidden sm:inline">Exportieren</span>
           </button>
           {shareFeedback && (
             <div className="absolute top-12 left-0 mt-2 bg-astro-text text-white text-[9px] px-3 py-1 rounded-full whitespace-nowrap animate-fade-in">
@@ -180,18 +180,18 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
           )}
         </div>
 
-        <div className="text-center mb-16 relative z-10">
-          <span className="font-sans text-[11px] tracking-[0.4em] text-astro-gold uppercase mb-4 block font-black">Synthese-Matrix</span>
-          <h3 className="font-serif text-6xl text-astro-text mb-8 tracking-tighter">{result.synthesisTitle}</h3>
-          <p className="font-sans text-xl text-astro-subtext max-w-2xl mx-auto leading-relaxed opacity-80 font-light">
+        <div className="text-center mb-10 md:mb-16 relative z-10 mt-12 md:mt-0">
+          <span className="font-sans text-[10px] md:text-[11px] tracking-[0.4em] text-astro-gold uppercase mb-3 md:mb-4 block font-black">Synthese-Matrix</span>
+          <h3 className="font-serif text-4xl md:text-6xl text-astro-text mb-6 md:mb-8 tracking-tighter leading-tight">{result.synthesisTitle}</h3>
+          <p className="font-sans text-base md:text-xl text-astro-subtext max-w-3xl mx-auto leading-relaxed opacity-80 font-light px-2">
             "{result.synthesisDescription}"
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          <div className="bg-p-violet/20 backdrop-blur-md border border-astro-border rounded-[2.5rem] p-10 transition-transform hover:scale-[1.01] duration-500">
-            <h5 className="font-serif text-2xl text-astro-text mb-6 border-b border-astro-border/50 pb-4">Westliche Sphäre</h5>
-            <div className="space-y-4 font-sans text-[10px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 mb-10 md:mb-16">
+          <div className="bg-p-violet/20 backdrop-blur-md border border-astro-border rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-12 transition-transform hover:scale-[1.01] duration-500">
+            <h5 className="font-serif text-xl md:text-3xl text-astro-text mb-4 md:mb-8 border-b border-astro-border/50 pb-4 text-center">Westliche Sphäre</h5>
+            <div className="space-y-6 font-sans text-xs">
               {[
                 { label: 'Sonnenzeichen', val: result.western.sunSign },
                 { label: 'Aszendent', val: result.western.ascendant },
@@ -199,15 +199,15 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center">
                   <span className="text-astro-subtext uppercase tracking-widest font-bold">{item.label}</span>
-                  <span className="font-serif italic text-xl text-astro-text">{item.val}</span>
+                  <span className="font-serif italic text-lg md:text-2xl text-astro-text">{item.val}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-p-sage/20 backdrop-blur-md border border-astro-border rounded-[2.5rem] p-10 transition-transform hover:scale-[1.01] duration-500">
-            <h5 className="font-serif text-2xl text-astro-text mb-6 border-b border-astro-border/50 pb-4">Östlicher Pfad</h5>
-            <div className="space-y-4 font-sans text-[10px]">
+          <div className="bg-p-sage/20 backdrop-blur-md border border-astro-border rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-12 transition-transform hover:scale-[1.01] duration-500">
+            <h5 className="font-serif text-xl md:text-3xl text-astro-text mb-4 md:mb-8 border-b border-astro-border/50 pb-4 text-center">Östlicher Pfad</h5>
+            <div className="space-y-6 font-sans text-xs">
               {[
                 { label: 'Wächter-Tier', val: result.eastern.yearAnimal },
                 { label: 'Basis-Element', val: result.eastern.yearElement },
@@ -217,7 +217,7 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center">
                   <span className="text-astro-subtext uppercase tracking-widest font-bold">{item.label}</span>
-                  <span className="font-serif italic text-xl text-astro-text">{item.val}</span>
+                  <span className="font-serif italic text-lg md:text-2xl text-astro-text">{item.val}</span>
                 </div>
               ))}
             </div>
@@ -226,39 +226,39 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
 
         {/* --- CURRENT COSMIC CURRENTS SECTION --- */}
         {currentSun && currentMoon && (
-          <div className="mb-16 bg-[#0B1221] text-white rounded-[2.5rem] p-10 border border-white/5 relative overflow-hidden">
+          <div className="mb-10 md:mb-16 bg-[#0B1221] text-white rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-12 border border-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 opacity-50"></div>
             
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-8">
+              <div className="flex items-center justify-center gap-2 mb-10">
                  <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
                  <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400">Aktuelle Kosmische Strömungen</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
                 {/* Sun Transit */}
-                <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-2xl shadow-lg shrink-0">
+                <div className="flex items-start gap-6 p-6 rounded-3xl hover:bg-white/5 transition-colors border border-white/5">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-2xl md:text-3xl shadow-lg shrink-0">
                     ☉
                   </div>
                   <div>
                     <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Solare Saison</div>
-                    <div className="font-serif text-2xl mb-1">{currentSun.sign}</div>
-                    <div className="text-xs text-gray-300 font-light leading-relaxed">
+                    <div className="font-serif text-2xl md:text-3xl mb-2 text-white">{currentSun.sign}</div>
+                    <div className="text-xs md:text-sm text-gray-300 font-light leading-relaxed">
                       {TRANSIT_THEMES[currentSun.sign]}
                     </div>
                   </div>
                 </div>
 
                 {/* Moon Transit */}
-                <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 flex items-center justify-center text-2xl text-slate-800 shadow-lg shrink-0">
+                <div className="flex items-start gap-6 p-6 rounded-3xl hover:bg-white/5 transition-colors border border-white/5">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 flex items-center justify-center text-2xl md:text-3xl text-slate-800 shadow-lg shrink-0">
                     ☽
                   </div>
                   <div>
                     <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Lunare Stimmung</div>
-                    <div className="font-serif text-2xl mb-1">{currentMoon.sign}</div>
-                    <div className="text-xs text-gray-300 font-light leading-relaxed">
+                    <div className="font-serif text-2xl md:text-3xl mb-2 text-white">{currentMoon.sign}</div>
+                    <div className="text-xs md:text-sm text-gray-300 font-light leading-relaxed">
                       {TRANSIT_THEMES[currentMoon.sign]}
                     </div>
                   </div>
@@ -267,14 +267,14 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
 
               {/* Retrograde Warning */}
               {retrogrades && retrogrades.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-white/10">
-                   <div className="flex flex-wrap items-center gap-4">
+                <div className="mt-8 pt-8 border-t border-white/10 text-center">
+                   <div className="flex flex-wrap items-center justify-center gap-4">
                       <span className="text-[9px] uppercase tracking-widest text-red-400 font-bold flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
                         Retrograde Phase:
                       </span>
                       {retrogrades.map(p => (
-                        <span key={p.body} className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-[10px] uppercase tracking-wider text-red-200 font-medium">
+                        <span key={p.body} className="px-4 py-1.5 bg-red-500/10 border border-red-500/30 rounded-full text-[10px] uppercase tracking-wider text-red-200 font-medium">
                           {p.body} in {p.sign}
                         </span>
                       ))}
@@ -295,7 +295,7 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
             setMousePos({ x: 0, y: 0 });
           }}
           className={`
-            bg-white/40 dark:bg-zinc-900/40 border rounded-[3.5rem] text-center backdrop-blur-2xl relative overflow-hidden group min-h-[450px] flex items-center justify-center transition-all duration-700 perspective-1000
+            bg-white/40 dark:bg-zinc-900/40 border rounded-[2rem] md:rounded-[3.5rem] text-center backdrop-blur-2xl relative overflow-hidden group min-h-[350px] md:min-h-[500px] flex items-center justify-center transition-all duration-700 perspective-1000
             ${isHovering ? 'border-astro-gold shadow-[0_45px_100px_rgba(212,175,55,0.25)]' : 'border-astro-border shadow-elevated'}
           `}
         >
@@ -328,29 +328,29 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
            ></div>
 
            <div 
-             className="relative z-10 p-12 will-change-transform transition-all duration-500 ease-out flex flex-col items-center"
+             className="relative z-10 p-6 md:p-16 will-change-transform transition-all duration-500 ease-out flex flex-col items-center max-w-5xl"
              style={{ 
                transform: `translateY(${parallaxOffset * 1.5}px) scale(${dynamicScale}) rotateX(${normalizedRotation}deg) rotateY(${normalizedRotationY}deg)` 
              }}
            >
-              <div className="inline-flex items-center gap-4 mb-8">
+              <div className="inline-flex items-center gap-4 mb-8 md:mb-12">
                 <span className={`w-1.5 h-1.5 rounded-full bg-astro-gold transition-all duration-500 animate-pulse-soft ${isHovering ? 'scale-150 shadow-[0_0_12px_#D4AF37]' : ''}`}></span>
-                <span className="font-serif text-[18px] italic tracking-[0.2em] text-astro-gold font-medium transition-all duration-700 group-hover:tracking-[0.3em]">
+                <span className="font-serif text-sm md:text-xl italic tracking-[0.2em] text-astro-gold font-medium transition-all duration-700 group-hover:tracking-[0.3em]">
                   Solar-Signatur: {result.western.sunSign}
                 </span>
                 <span className={`w-1.5 h-1.5 rounded-full bg-astro-gold transition-all duration-500 animate-pulse-soft ${isHovering ? 'scale-150 shadow-[0_0_12px_#D4AF37]' : ''}`} style={{ animationDelay: '1.5s' }}></span>
               </div>
               
-              <div className="relative group/text cursor-default">
-                <p className="font-sans font-light text-astro-text text-3xl md:text-6xl leading-tight opacity-95 max-w-4xl mx-auto drop-shadow-xl select-none transition-all duration-700 group-hover/text:scale-[1.02] group-hover/text:text-astro-gold tracking-tight">
+              <div className="relative group/text cursor-default px-4">
+                <p className="font-sans font-light text-astro-text text-3xl md:text-7xl leading-tight opacity-95 mx-auto drop-shadow-xl select-none transition-all duration-700 group-hover/text:scale-[1.02] group-hover/text:text-astro-gold tracking-tight">
                   "{sunInsight}"
                 </p>
               </div>
               
               <div 
-                className={`mt-10 h-1 transition-all duration-1000 bg-gradient-to-r from-transparent via-astro-gold/40 to-transparent`}
+                className={`mt-12 h-1 transition-all duration-1000 bg-gradient-to-r from-transparent via-astro-gold/40 to-transparent`}
                 style={{
-                  width: isHovering ? '12rem' : '5rem',
+                  width: isHovering ? '16rem' : '6rem',
                   opacity: 0.5 + autoPulse * 0.5
                 }}
               ></div>
@@ -358,13 +358,13 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
         </div>
 
         {/* --- GENERATOR CONFIGURATION SECTION --- */}
-        <div className="mt-16 bg-astro-bg/30 rounded-[2.5rem] p-10 border border-astro-border animate-fade-in-up">
-           <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-              <div className="text-center md:text-left">
-                 <h4 className="font-serif text-3xl text-astro-text mb-1">Generator-Konfiguration</h4>
+        <div className="mt-10 md:mt-16 bg-astro-bg/30 rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-12 border border-astro-border animate-fade-in-up">
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+              <div className="text-center md:text-left w-full md:w-auto">
+                 <h4 className="font-serif text-2xl md:text-3xl text-astro-text mb-1">Generator-Konfiguration</h4>
                  <p className="font-sans text-[10px] uppercase tracking-widest text-astro-subtext font-bold">Gewichtung der kosmischen Einflüsse</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-end">
                  <div className="flex items-center gap-2">
                     <div className="text-[9px] uppercase tracking-widest text-astro-subtext font-bold">Hintergrund:</div>
                     <button 
@@ -388,18 +388,18 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
                   <button
                     key={opt.id}
                     onClick={() => setConfig(prev => ({ ...prev, influence: opt.id as any }))}
-                    className={`group relative text-left p-6 rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${isActive ? `bg-white ${opt.accent} ${opt.glow} scale-[1.03]` : 'bg-white/50 border-astro-border hover:border-astro-gold/40'}`}
+                    className={`group relative text-left p-6 md:p-8 rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${isActive ? `bg-white ${opt.accent} ${opt.glow} scale-[1.03]` : 'bg-white/50 border-astro-border hover:border-astro-gold/40'}`}
                   >
                     <div className="relative z-10">
-                       <div className="flex items-center justify-between mb-3">
-                          <span className={`text-3xl transition-transform duration-500 ${isActive ? 'scale-125 rotate-12' : 'group-hover:scale-110'}`}>{opt.icon}</span>
+                       <div className="flex items-center justify-between mb-4">
+                          <span className={`text-4xl transition-transform duration-500 ${isActive ? 'scale-125 rotate-12' : 'group-hover:scale-110'}`}>{opt.icon}</span>
                           {isActive && <div className={`w-2 h-2 rounded-full ${opt.id === 'eastern' ? 'bg-emerald-500' : 'bg-astro-gold'}`}></div>}
                        </div>
-                       <div className={`font-serif text-2xl mb-1 transition-colors ${isActive ? (opt.id === 'eastern' ? 'text-emerald-700' : 'text-astro-gold') : 'text-astro-text'}`}>{opt.label}</div>
-                       <p className="font-sans text-[10px] text-astro-subtext leading-relaxed tracking-wider font-medium">{opt.desc}</p>
+                       <div className={`font-serif text-2xl md:text-3xl mb-2 transition-colors ${isActive ? (opt.id === 'eastern' ? 'text-emerald-700' : 'text-astro-gold') : 'text-astro-text'}`}>{opt.label}</div>
+                       <p className="font-sans text-xs text-astro-subtext leading-relaxed tracking-wide font-medium">{opt.desc}</p>
                     </div>
                     {isActive && (
-                       <div className={`absolute top-0 right-0 w-20 h-20 ${opt.id === 'eastern' ? 'bg-emerald-500/5' : 'bg-astro-gold/5'} rounded-bl-full pointer-events-none`}></div>
+                       <div className={`absolute top-0 right-0 w-24 h-24 ${opt.id === 'eastern' ? 'bg-emerald-500/5' : 'bg-astro-gold/5'} rounded-bl-full pointer-events-none`}></div>
                     )}
                   </button>
                 );
@@ -409,13 +409,13 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
            {config.influence === 'eastern' && (
              <div className="mt-8 p-6 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/30 animate-fade-in flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                   <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">🐉</div>
+                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl">🐉</div>
                    <div>
-                      <div className="font-serif text-lg text-emerald-900 dark:text-emerald-100">Östlicher Fokus Aktiviert</div>
+                      <div className="font-serif text-xl text-emerald-900 dark:text-emerald-100">Östlicher Fokus Aktiviert</div>
                       <p className="text-[10px] font-sans text-emerald-600/70 uppercase tracking-widest font-bold">Elementarer Fluss & Wächter-Resonanz</p>
                    </div>
                 </div>
-                <div className="px-4 py-2 bg-emerald-600 text-white rounded-full text-[9px] uppercase tracking-widest font-black shadow-lg">
+                <div className="px-5 py-2.5 bg-emerald-600 text-white rounded-full text-[10px] uppercase tracking-widest font-black shadow-lg">
                    Deep Synthesis Matrix
                 </div>
              </div>
@@ -423,9 +423,9 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
         </div>
 
         {/* --- CTA SECTION --- */}
-        <div className="mt-16 pt-16 border-t border-astro-border flex flex-col md:flex-row items-center justify-between gap-12">
+        <div className="mt-10 pt-10 md:mt-20 md:pt-16 border-t border-astro-border flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
            <div className="max-w-md text-center md:text-left">
-              <h4 className="font-serif text-4xl text-astro-text mb-4">Der uralte Wächter</h4>
+              <h4 className="font-serif text-3xl md:text-4xl text-astro-text mb-4">Der uralte Wächter</h4>
               <p className="font-sans text-sm text-astro-subtext leading-relaxed font-light">
                 Jede Seele wird von einer archaischen Kraft begleitet. Welches Wesen spiegelt dein innerstes Wesen wider?
               </p>
@@ -433,19 +433,19 @@ export const AnalysisView: React.FC<Props> = ({ result, state, onGenerateImage, 
            
            <button 
              onClick={onNavigateToQuizzes}
-             className="group relative px-10 py-5 bg-[#0D0D0F] text-white rounded-2xl font-serif italic text-2xl shadow-elevated hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 overflow-hidden"
+             className="w-full md:w-auto group relative px-10 py-5 bg-[#0D0D0F] text-white rounded-2xl font-serif italic text-xl md:text-2xl shadow-elevated hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 overflow-hidden"
            >
-             <span className="relative z-10">Wächter entdecken</span>
+             <span className="relative z-10 flex items-center justify-center gap-3">Wächter entdecken <span className="text-astro-gold">→</span></span>
              <div className="absolute inset-0 bg-gradient-to-r from-astro-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
              <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:rotate-12 transition-transform">✦</div>
            </button>
         </div>
 
-        <div className="mt-16 text-center">
+        <div className="mt-10 md:mt-20 text-center">
            <button 
              onClick={() => onGenerateImage(config)}
              disabled={state === CalculationState.GENERATING_IMAGE || state === CalculationState.FINISHED}
-             className="px-12 py-5 bg-astro-text text-white font-serif italic text-xl rounded-2xl shadow-elevated hover:bg-black transition-all duration-500 disabled:opacity-50 relative overflow-hidden group"
+             className="w-full md:w-auto px-10 py-5 md:px-16 md:py-6 bg-astro-text text-white font-serif italic text-xl md:text-2xl rounded-2xl shadow-elevated hover:bg-black transition-all duration-500 disabled:opacity-50 relative overflow-hidden group"
            >
              <span className="relative z-10">
                {state === CalculationState.GENERATING_IMAGE ? 'Kosmische Webung...' : 'Meisterwerk erschaffen'}

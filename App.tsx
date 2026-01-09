@@ -85,6 +85,12 @@ export default function App() {
          setTransitDate(dateObj); // Update weather date to birth date
       }
       setAstroState(CalculationState.COMPLETE);
+      
+      // Smooth scroll to results after a slight delay for layout shift
+      setTimeout(() => {
+        document.getElementById('analysis-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+      
     } catch (error) {
       setAstroState(CalculationState.ERROR);
     } finally {
@@ -151,7 +157,7 @@ export default function App() {
         </div>
       )}
 
-      <main className="max-w-6xl mx-auto p-6 md:p-12 lg:p-16">
+      <main className="max-w-[1600px] mx-auto p-6 md:p-12 lg:p-16">
         <div className="flex justify-between items-center mb-12 animate-fade-in">
           <div className="flex items-center gap-2 text-astro-subtext text-xs font-sans tracking-widest uppercase font-bold">
             <span>Core_Logic_V5.0</span>
@@ -192,32 +198,41 @@ export default function App() {
         ) : currentView === 'matrix' ? (
            <MatrixDocsView />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 animate-fade-in">
-            <div className="lg:col-span-4 space-y-10">
-              <InputCard onSubmit={handleValidation} isLoading={astroState === CalculationState.CALCULATING} />
+          <div className="flex flex-col gap-16 md:gap-24 animate-fade-in">
+            
+            {/* TOP SECTION: INPUT & WEATHER (Split View) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+                <div className="lg:col-span-4 space-y-10 sticky top-10">
+                  <InputCard onSubmit={handleValidation} isLoading={astroState === CalculationState.CALCULATING} />
+                </div>
+                
+                <div className="lg:col-span-8 space-y-12">
+                   <CosmicWeather 
+                      transits={transits} 
+                      isLoading={loadingTransits} 
+                      displayDate={transitDate}
+                      title={astroState === CalculationState.IDLE ? "Kosmisches Wetter" : "Deine Celestia Matrix"}
+                    />
+                   
+                   {/* Idle State Message */}
+                   {astroState === CalculationState.IDLE && (
+                      <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
+                        <p className="font-serif italic text-lg text-astro-subtext">Geburtsdaten für individuelle Sphären-Projektion erforderlich.</p>
+                      </div>
+                   )}
+                   
+                   {/* Error State */}
+                   {astroState === CalculationState.ERROR && (
+                      <div className="h-full flex flex-col items-center justify-center text-center py-20 bg-red-50 dark:bg-red-900/10 rounded-[3rem] border border-red-200">
+                        <h3 className="font-serif text-3xl text-red-600">Verbindungsabbruch</h3>
+                      </div>
+                   )}
+                </div>
             </div>
-            <div className="lg:col-span-8 space-y-12">
-              {astroState === CalculationState.IDLE && (
-                <div className="space-y-12">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} displayDate={transitDate} />
-                  <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
-                    <p className="font-serif italic text-lg text-astro-subtext">Geburtsdaten für individuelle Sphären-Projektion erforderlich.</p>
-                  </div>
-                </div>
-              )}
-              {astroState === CalculationState.ERROR && (
-                <div className="h-full flex flex-col items-center justify-center text-center py-20 bg-red-50 dark:bg-red-900/10 rounded-[3rem] border border-red-200">
-                  <h3 className="font-serif text-3xl text-red-600">Verbindungsabbruch</h3>
-                </div>
-              )}
-              {(astroState !== CalculationState.IDLE && astroState !== CalculationState.ERROR) && analysisResult && (
-                <div className="space-y-12 animate-fade-in-up">
-                  <CosmicWeather 
-                    transits={transits} 
-                    isLoading={loadingTransits} 
-                    displayDate={transitDate}
-                    title="Deine Celestia Matrix" 
-                  />
+
+            {/* BOTTOM SECTION: ANALYSIS RESULTS (Full Width, Centered) */}
+            {(astroState !== CalculationState.IDLE && astroState !== CalculationState.ERROR) && analysisResult && (
+                <div id="analysis-section" className="w-full max-w-5xl mx-auto space-y-16 animate-fade-in-up border-t border-astro-border pt-16 md:pt-24">
                   <AnalysisView 
                     result={analysisResult} 
                     state={astroState}
@@ -225,18 +240,18 @@ export default function App() {
                     onNavigateToQuizzes={() => setCurrentView('quizzes')}
                     transits={transits}
                   />
+                  
+                  {generatedImage && (
+                    <div className="animate-fade-in-up">
+                      <ResultSymbol 
+                        imageUrl={generatedImage} 
+                        synthesis={analysisResult.synthesisTitle} 
+                        sunSign={analysisResult.western.sunSign}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-              {generatedImage && analysisResult && (
-                <div className="animate-fade-in-up">
-                  <ResultSymbol 
-                    imageUrl={generatedImage} 
-                    synthesis={analysisResult.synthesisTitle} 
-                    sunSign={analysisResult.western.sunSign}
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )}
       </main>
