@@ -2,6 +2,7 @@
 import React from 'react';
 import { FusionResult, Transit } from '../types';
 import { CosmicWeather } from './CosmicWeather';
+import { SmartImage } from './SmartImage';
 
 interface Props {
   result: FusionResult;
@@ -69,11 +70,14 @@ export const CharacterDashboard: React.FC<Props> = ({
           <div className="lg:col-span-4 flex flex-col">
             <div className="sticky top-24">
               <div className="w-full aspect-[3/5] rounded-[3.5rem] overflow-hidden relative shadow-elevated group border border-astro-border bg-[#0D0D0F]">
-                {/* Background AI Symbol - Blurred for depth */}
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-all duration-[15s] ease-linear group-hover:scale-125 opacity-30 blur-2xl scale-110"
-                  style={{ backgroundImage: `url(${symbolUrl})` }}
-                ></div>
+                {/* Background AI Symbol - Blurred for depth using SmartImage */}
+                <SmartImage 
+                  src={symbolUrl}
+                  alt="Background Ambience"
+                  containerClassName="absolute inset-0"
+                  className="w-full h-full object-cover transition-all duration-[15s] ease-linear group-hover:scale-125 opacity-30 blur-2xl scale-110"
+                  priority={true}
+                />
                 
                 {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90"></div>
@@ -100,10 +104,12 @@ export const CharacterDashboard: React.FC<Props> = ({
                        
                        {/* THE AI GENERATED SYMBOL: THE FOCUS */}
                        <div className="w-[85%] h-[85%] rounded-full overflow-hidden border border-white/20 bg-black/40 backdrop-blur-xl shadow-[0_0_80px_rgba(212,175,55,0.15)] transition-all duration-1000 group-hover:scale-[1.08] relative group/symbol">
-                          <img 
+                          <SmartImage 
                             src={symbolUrl} 
                             alt="Cosmic Identity Symbol" 
+                            containerClassName="w-full h-full"
                             className="w-full h-full object-cover filter brightness-110 contrast-105 transition-all duration-700 group-hover/symbol:brightness-125"
+                            priority={true}
                           />
                           {/* Inner scanner line simulation */}
                           <div className="absolute top-0 left-0 w-full h-[1px] bg-astro-gold/40 animate-[bounce_5s_infinite] opacity-0 group-hover:opacity-100"></div>

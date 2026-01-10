@@ -104,7 +104,10 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
   const [hoveredSign, setHoveredSign] = useState<string | null>(null);
   const [hoveredOrbit, setHoveredOrbit] = useState<string | null>(null);
   const [selectedPlanet, setSelectedPlanet] = useState<AugmentedTransit | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  
+  // Optimization: Use ref for mouse position to avoid re-rendering entire chart on every pixel move
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const planetCoords = useMemo((): AugmentedTransit[] => {
@@ -180,6 +183,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
     return aspects;
   }, [activePlanet, planetCoords]);
 
+  // Helper to create SVG Arc Paths
   const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
     const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
       const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
@@ -198,10 +202,17 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
   const handleMouseMove = (e: React.MouseEvent) => {
     if (chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      setMousePos({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Update ref instead of state to prevent re-renders
+      mouseRef.current = { x, y };
+
+      // Direct DOM manipulation for tooltip position
+      if (tooltipRef.current) {
+        tooltipRef.current.style.left = `${x + 20}px`;
+        tooltipRef.current.style.top = `${y - 20}px`;
+      }
     }
   };
 
@@ -272,16 +283,6 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
               height: '400px'
             }}
           >
-            {/* Tooltip Overlay */}
-            {(hoveredSign || hoveredOrbit) && (
-              <div 
-                className="absolute z-50 pointer-events-none transition-all duration-200 ease-out flex flex-col items-center"
-                style={{
-                   display: 'none' // Handled below outside the 3D transform for better readability
-                }}
-              ></div>
-            )}
-
             <svg viewBox="0 0 300 300" className="w-full h-full overflow-visible absolute inset-0">
               <defs>
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -303,7 +304,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                 </linearGradient>
               </defs>
 
-              <g className="fill-none cursor-pointer">
+              <g className="fill-none">
                 {planetCoords.map((p, i) => {
                   const isActive = hoveredPlanet === p.body || selectedPlanet?.body === p.body;
                   const isOrbitHovered = hoveredOrbit === p.body;
@@ -313,23 +314,23 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
 
                   return (
                     <g key={`orbit-group-${p.body}`}>
+                      {/* Invisible Hit Area for Orbit - Thicker stroke */}
                       <circle 
                         cx="150" cy="150" r={p.radius} 
-                        stroke="url(#orbitGradient)"
-                        strokeOpacity={isActive || isOrbitHovered ? "0.6" : "0.05"}
-                        strokeWidth={isActive || isOrbitHovered ? "4" : "1.5"}
-                        className="transition-all duration-700 pointer-events-none"
+                        stroke="transparent"
+                        strokeWidth="12"
+                        className="cursor-pointer"
+                        onMouseEnter={() => setHoveredOrbit(p.body)}
+                        onMouseLeave={() => setHoveredOrbit(null)}
                       />
+                      {/* Visible Orbit Line with Gradient */}
                       <circle 
                         cx="150" cy="150" r={p.radius} 
-                        stroke={isActive ? "url(#orbitGradientActive)" : (isOrbitHovered ? "white" : "white")}
-                        strokeOpacity={isActive || isOrbitHovered ? "1" : "0.15"}
+                        stroke={isActive ? "url(#orbitGradientActive)" : (isOrbitHovered ? "white" : "url(#orbitGradient)")}
+                        strokeOpacity={isActive || isOrbitHovered ? "1" : "0.3"}
                         strokeWidth={isActive || isOrbitHovered ? "1.5" : "0.5"}
                         filter={isActive || isOrbitHovered ? "url(#glow)" : "none"}
-                        className={`transition-all duration-300 pointer-events-auto ${isActive || isOrbitHovered ? 'orbit-path-active' : 'orbit-path'}`}
-                        onMouseEnter={() => { setHoveredOrbit(p.body); }}
-                        onMouseLeave={() => { setHoveredOrbit(null); }}
-                        onClick={() => setSelectedPlanet(p)}
+                        className={`transition-all duration-300 pointer-events-none ${isActive || isOrbitHovered ? 'orbit-path-active' : 'orbit-path'}`}
                       />
                     </g>
                   );
@@ -357,7 +358,7 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                 </g>
               )}
 
-              <g className="cursor-pointer">
+              <g>
                 {ZODIAC_ORDER.map((sign, i) => {
                   const startAngle = i * 30;
                   const endAngle = (i + 1) * 30;
@@ -371,9 +372,10 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
                       stroke={isHovered ? elementColor : "white"}
                       strokeOpacity={isHovered ? "0.8" : "0.2"}
                       strokeWidth={isHovered ? "8" : "2"}
+                      fill="transparent"
                       filter={isHovered ? "url(#glow)" : "none"}
-                      className="transition-all duration-300 pointer-events-auto fill-transparent hover:fill-white/5"
-                      onMouseEnter={() => setHoveredSign(sign)} 
+                      className="transition-all duration-300 cursor-pointer"
+                      onMouseEnter={() => setHoveredSign(sign)}
                       onMouseLeave={() => setHoveredSign(null)}
                     />
                   );
@@ -413,30 +415,31 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
               if (planet.body === 'Sun') style = BODY_STYLES['Sun'];
               if (planet.body === 'Moon') style = BODY_STYLES['Moon'];
 
-              // Scale determination
+              // Scale determination for visual part only
               const isSun = planet.body === 'Sun';
               const baseSize = isSun ? 'w-10 h-10' : (planet.body === 'Moon' ? 'w-4 h-4' : 'w-5 h-5');
               
-              // Scale factor
-              const scaleClass = isSelected 
-                 ? 'scale-[1.5] z-50' 
-                 : (isHovered ? 'scale-125 z-40' : 'z-20');
+              const visualScaleClass = isSelected 
+                 ? 'scale-[1.5]' 
+                 : (isHovered ? 'scale-125' : 'scale-100');
 
               return (
                 <div 
                   key={planet.body}
-                  className={`absolute group/planet cursor-pointer transition-all duration-500 ${scaleClass}`}
+                  className={`absolute z-30 flex items-center justify-center cursor-pointer`}
                   style={{
                     left: `${(planet.x / 300) * 100}%`,
                     top: `${(planet.y / 300) * 100}%`,
-                    transform: 'translate(-50%, -50%) rotateX(-58deg)' 
+                    transform: 'translate(-50%, -50%) rotateX(-58deg)',
+                    width: isSun ? '48px' : '32px', // Slight hit area adjustment
+                    height: isSun ? '48px' : '32px'
                   }}
-                  onMouseEnter={() => { setHoveredPlanet(planet.body); setHoveredSign(planet.sign); }}
-                  onMouseLeave={() => { setHoveredPlanet(null); setHoveredSign(null); }}
+                  onMouseEnter={() => setHoveredPlanet(planet.body)}
+                  onMouseLeave={() => setHoveredPlanet(null)}
                   onClick={(e) => { e.stopPropagation(); setSelectedPlanet(isSelected ? null : planet); }}
                 >
                   <div 
-                    className={`${baseSize} rounded-full transition-all duration-500 relative`}
+                    className={`${baseSize} rounded-full transition-all duration-500 relative ${visualScaleClass} ${isSelected ? 'z-50' : 'z-20'}`}
                     style={{
                         ...style,
                         filter: isSelected ? 'brightness(1.2)' : 'none'
@@ -454,10 +457,11 @@ export const CosmicWeather: React.FC<Props> = ({ transits, isLoading, title = "K
         {/* 3D Tooltip Overlay - Following Mouse in 2D Space */}
         {(hoveredSign || hoveredOrbit) && (
             <div 
-                className="absolute z-50 pointer-events-none px-4 py-3 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-fade-in flex flex-col gap-1"
+                ref={tooltipRef}
+                className="absolute z-50 pointer-events-none px-4 py-3 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-fade-in flex flex-col gap-1 transition-opacity duration-200"
                 style={{ 
-                    left: mousePos.x + 20, 
-                    top: mousePos.y - 20,
+                    left: mouseRef.current.x + 20, 
+                    top: mouseRef.current.y - 20,
                     transform: 'translateZ(100px)' 
                 }}
             >
