@@ -1,3 +1,4 @@
+
 import { BirthData, FusionResult, WesternAnalysis, EasternAnalysis } from '../types';
 
 // --- Western Zodiac Data ---
@@ -121,13 +122,18 @@ const calculateBaZi = (date: Date) => {
   let dayBranchIndex = (10 + diffDays) % 12;
   if (dayBranchIndex < 0) dayBranchIndex += 12;
 
-  const dayElement = HEAVENLY_STEMS[dayStemIndex].element; 
+  const dayElement = HEAVENLY_STEMS[dayStemIndex].element;
+  const dayStemName = HEAVENLY_STEMS[dayStemIndex].name;
+  const dayPolarity = dayStemIndex % 2 === 0 ? 'Yang' : 'Yin';
+
   return {
     yearAnimal,
     yearElement,
     monthAnimal,
     dayElement,
-    dayStemName: HEAVENLY_STEMS[dayStemIndex].name
+    dayStemName,
+    dayPolarity,
+    dayStemIndex
   };
 };
 
@@ -277,7 +283,9 @@ const calculateLocalAnalysis = (dateObj: Date): { western: WesternAnalysis, east
       yearAnimal: baZi.yearAnimal,
       yearElement: baZi.yearElement,
       monthAnimal: baZi.monthAnimal,
-      dayElement: baZi.dayElement
+      dayElement: baZi.dayElement,
+      dayStem: baZi.dayStemName,
+      dayPolarity: baZi.dayPolarity
     }
   };
 };

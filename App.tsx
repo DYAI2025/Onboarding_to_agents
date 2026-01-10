@@ -8,22 +8,36 @@ import { QuizView } from './components/QuizView';
 import { CharacterDashboard } from './components/CharacterDashboard';
 import { CosmicWeather } from './components/CosmicWeather';
 import { AgentSelectionView } from './components/AgentSelectionView';
-import { PricingView } from './components/PricingView';
-import { BillingView } from './components/BillingView';
-import { BirthData, CalculationState, FusionResult, Transit, UserSubscription } from './types';
+import { MatrixDocsView } from './components/MatrixDocsView';
+import { BirthData, CalculationState, FusionResult, Transit } from './types';
 import { runFusionAnalysis } from './services/astroPhysics';
 import { generateSymbol, SymbolConfig } from './services/geminiService';
 import { fetchCurrentTransits, fetchTransitsForDate } from './services/transitService';
 
-type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'pricing' | 'billing';
+type ViewType = 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Initialize theme from localStorage
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('astro_theme');
+      return savedTheme === 'dark';
+    } catch (e) {
+      return false;
+    }
+  });
 
+  // Apply theme class and save to localStorage
   useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('astro_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('astro_theme', 'light');
+    }
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
@@ -36,18 +50,7 @@ export default function App() {
 
   const [transits, setTransits] = useState<Transit[]>([]);
   const [loadingTransits, setLoadingTransits] = useState(false);
-
-  // Subscription & Payment State
-  const [userSubscription, setUserSubscription] = useState<UserSubscription>({
-    userId: 'user_mock_123',
-    tier: 'FREE',
-    status: 'active',
-    tokensRemaining: 2500,
-    tokensTotal: 2500,
-    currentPeriodStart: new Date(),
-    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    autoRenew: true,
-  });
+  const [transitDate, setTransitDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const loadTransits = async () => {
@@ -55,6 +58,7 @@ export default function App() {
       try {
         const data = await fetchCurrentTransits();
         if (data && data.length > 0) setTransits(data);
+        setTransitDate(new Date()); // Ensure it shows today's date initially
       } catch (e) {
         console.error("Failed to load transits", e);
       } finally {
@@ -76,7 +80,10 @@ export default function App() {
         fetchTransitsForDate(dateObj)
       ]);
       setAnalysisResult(result);
-      if (birthTransits && birthTransits.length > 0) setTransits(birthTransits);
+      if (birthTransits && birthTransits.length > 0) {
+         setTransits(birthTransits);
+         setTransitDate(dateObj); // Update weather date to birth date
+      }
       setAstroState(CalculationState.COMPLETE);
     } catch (error) {
       setAstroState(CalculationState.ERROR);
@@ -109,18 +116,6 @@ export default function App() {
     setCurrentView('character_dashboard');
   };
 
-  const handlePurchaseSuccess = () => {
-    // In production, fetch updated subscription from backend
-    setUserSubscription(prev => ({
-      ...prev,
-      tokensRemaining: prev.tokensRemaining + 500, // Mock token addition
-    }));
-  };
-
-  const handleNavigateToPricing = () => {
-    setCurrentView('pricing');
-  };
-
   // If we are in the agent selection view, we render full screen without the sidebar layout for immersion
   if (currentView === 'agent_selection' && analysisResult && generatedImage) {
     return (
@@ -134,12 +129,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-astro-bg text-astro-text pl-20 md:pl-64 transition-all duration-300 relative">
-      <Sidebar
-        currentView={currentView}
-        onNavigate={setCurrentView}
+      <Sidebar 
+        currentView={currentView} 
+        onNavigate={setCurrentView} 
         isDarkMode={isDarkMode}
         onToggleTheme={toggleTheme}
-        tokensRemaining={userSubscription.tokensRemaining}
       />
       
       {showCompletionModal && (
@@ -162,25 +156,22 @@ export default function App() {
           <div className="flex items-center gap-2 text-astro-subtext text-xs font-sans tracking-widest uppercase font-bold">
             <span>Core_Logic_V5.0</span>
             <span className="text-astro-gold animate-pulse">•</span>
-            <span>{currentView === 'dashboard' ? 'FUSION_ACTIVE' : currentView === 'quizzes' ? 'KNOWLEDGE_VAULT' : 'ENTITY_MATRIX'}</span>
+            <span>
+              {currentView === 'dashboard' ? 'FUSION_ACTIVE' : 
+               currentView === 'quizzes' ? 'KNOWLEDGE_VAULT' : 
+               currentView === 'matrix' ? 'SYSTEM_DOCS' : 'ENTITY_MATRIX'}
+            </span>
           </div>
           <div className="hidden md:flex items-center gap-4">
              <div className="flex flex-col items-end mr-2">
                 <span className="font-sans text-[10px] text-astro-subtext uppercase tracking-widest font-bold">Authenticated_Seeker</span>
                 <span className="font-serif italic text-sm text-astro-gold">Julian S.</span>
              </div>
-             <div className="w-10 h-10 rounded-full bg-astro-text text-white flex items-center justify-center font-serif text-lg shadow-elevated">J</div>
+             <div className="w-1.5 h-1.5 rounded-full bg-astro-gold animate-pulse"></div>
           </div>
         </div>
 
-        {currentView === 'pricing' ? (
-          <PricingView onPurchaseSuccess={handlePurchaseSuccess} />
-        ) : currentView === 'billing' ? (
-          <BillingView
-            subscription={userSubscription}
-            onUpgrade={handleNavigateToPricing}
-          />
-        ) : currentView === 'quizzes' ? (
+        {currentView === 'quizzes' ? (
           <QuizView />
         ) : currentView === 'character_dashboard' ? (
           analysisResult && generatedImage ? (
@@ -198,6 +189,8 @@ export default function App() {
                <button onClick={() => setCurrentView('dashboard')} className="text-astro-gold underline">Zurück zum Dashboard</button>
              </div>
           )
+        ) : currentView === 'matrix' ? (
+           <MatrixDocsView />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 animate-fade-in">
             <div className="lg:col-span-4 space-y-10">
@@ -206,7 +199,7 @@ export default function App() {
             <div className="lg:col-span-8 space-y-12">
               {astroState === CalculationState.IDLE && (
                 <div className="space-y-12">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} />
+                  <CosmicWeather transits={transits} isLoading={loadingTransits} displayDate={transitDate} />
                   <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
                     <p className="font-serif italic text-lg text-astro-subtext">Geburtsdaten für individuelle Sphären-Projektion erforderlich.</p>
                   </div>
@@ -219,18 +212,28 @@ export default function App() {
               )}
               {(astroState !== CalculationState.IDLE && astroState !== CalculationState.ERROR) && analysisResult && (
                 <div className="space-y-12 animate-fade-in-up">
-                  <CosmicWeather transits={transits} isLoading={loadingTransits} title="Deine Celestia Matrix" />
+                  <CosmicWeather 
+                    transits={transits} 
+                    isLoading={loadingTransits} 
+                    displayDate={transitDate}
+                    title="Deine Celestia Matrix" 
+                  />
                   <AnalysisView 
                     result={analysisResult} 
                     state={astroState}
                     onGenerateImage={handleGenerateImage}
                     onNavigateToQuizzes={() => setCurrentView('quizzes')}
+                    transits={transits}
                   />
                 </div>
               )}
               {generatedImage && analysisResult && (
                 <div className="animate-fade-in-up">
-                  <ResultSymbol imageUrl={generatedImage} synthesis={analysisResult.synthesisTitle} />
+                  <ResultSymbol 
+                    imageUrl={generatedImage} 
+                    synthesis={analysisResult.synthesisTitle} 
+                    sunSign={analysisResult.western.sunSign}
+                  />
                 </div>
               )}
             </div>

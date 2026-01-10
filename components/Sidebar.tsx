@@ -2,21 +2,19 @@
 import React from 'react';
 
 interface Props {
-  currentView: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'pricing' | 'billing';
-  onNavigate: (view: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'pricing' | 'billing') => void;
+  currentView: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix';
+  onNavigate: (view: 'dashboard' | 'quizzes' | 'character_dashboard' | 'agent_selection' | 'matrix') => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
-  tokensRemaining?: number;
 }
 
-export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, onToggleTheme, tokensRemaining = 0 }) => {
+export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, onToggleTheme }) => {
   const menuItems = [
     { id: 'dashboard', icon: '◉', label: 'Dashboard' },
     { id: 'profile', icon: '👤', label: 'Identity' },
     { id: 'quizzes', icon: '☾', label: 'Archive' },
     { id: 'agents', icon: '✦', label: 'Entities' },
-    { id: 'pricing', icon: '💎', label: 'Upgrade' },
-    { id: 'billing', icon: '💳', label: 'Billing' },
+    { id: 'premium', icon: '⚛', label: 'Ascension' },
   ];
 
   const handleNavigation = (id: string) => {
@@ -24,8 +22,6 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
     if (id === 'quizzes') onNavigate('quizzes');
     if (id === 'profile') onNavigate('character_dashboard');
     if (id === 'agents') onNavigate('agent_selection');
-    if (id === 'pricing') onNavigate('pricing');
-    if (id === 'billing') onNavigate('billing');
   };
 
   return (
@@ -39,13 +35,11 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
       <div className="flex flex-col gap-6 w-full">
         {menuItems.map((item) => {
           // Map internal ID to view state for active check
-          const isActive =
+          const isActive = 
             (item.id === 'dashboard' && currentView === 'dashboard') ||
             (item.id === 'quizzes' && currentView === 'quizzes') ||
             (item.id === 'profile' && currentView === 'character_dashboard') ||
-            (item.id === 'agents' && currentView === 'agent_selection') ||
-            (item.id === 'pricing' && currentView === 'pricing') ||
-            (item.id === 'billing' && currentView === 'billing');
+            (item.id === 'agents' && currentView === 'agent_selection');
 
           return (
             <div 
@@ -67,24 +61,12 @@ export const Sidebar: React.FC<Props> = ({ currentView, onNavigate, isDarkMode, 
         })}
       </div>
 
-      {/* Token Balance Display */}
-      <div className="mt-8 w-full">
-        <div className="bg-astro-bg/50 border border-astro-border rounded-2xl p-4">
-          <div className="flex items-center justify-center md:justify-between gap-2">
-            <span className="text-xl">🪙</span>
-            <div className="hidden md:block">
-              <div className="text-[9px] text-astro-subtext uppercase tracking-widest font-bold">
-                Tokens
-              </div>
-              <div className="font-serif text-lg text-astro-gold">{tokensRemaining}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="mt-auto space-y-4 w-full pt-10 border-t border-astro-border/50">
-        <div className="flex items-center gap-5 text-astro-subtext p-3.5 cursor-pointer hover:text-astro-text transition-colors group">
-          <span className="text-xl group-hover:rotate-45 transition-transform duration-500">⚙</span>
+        <div 
+          onClick={() => onNavigate('matrix')}
+          className={`flex items-center gap-5 p-3.5 cursor-pointer transition-colors group rounded-2xl ${currentView === 'matrix' ? 'bg-astro-bg text-astro-gold' : 'text-astro-subtext hover:text-astro-text'}`}
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-700">⚙</span>
           <span className="hidden md:inline font-sans text-[10px] tracking-[0.2em] uppercase font-bold">Matrix</span>
         </div>
         <div 

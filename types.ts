@@ -1,3 +1,4 @@
+
 export interface BirthData {
   date: string;
   time: string;
@@ -16,6 +17,8 @@ export interface EasternAnalysis {
   yearElement: string;
   monthAnimal: string; // Simulated
   dayElement: string; // Simulated
+  dayStem?: string;
+  dayPolarity?: string;
 }
 
 export interface FusionResult {
@@ -103,68 +106,4 @@ export interface Score {
   resultTitle?: string; // For Personality
   totalQuestions: number;
   timestamp: number;
-}
-
-// --- Payment & Subscription Types ---
-
-export type SubscriptionTier = 'FREE' | 'DAILY_PASS' | 'PREMIUM_MONTHLY' | 'PREMIUM_YEARLY';
-
-export interface TokenPackage {
-  id: string;
-  name: string;
-  tokens: number;
-  price: number; // in cents
-  currency: string;
-  popular?: boolean;
-  bonus?: string;
-}
-
-export interface SubscriptionPlan {
-  id: string;
-  name: string;
-  tier: SubscriptionTier;
-  price: number; // in cents
-  currency: string;
-  interval: 'day' | 'month' | 'year';
-  features: string[];
-  tokensIncluded: number;
-  popular?: boolean;
-  stripePriceId?: string; // Stripe Price ID for production
-}
-
-export interface UserSubscription {
-  userId: string;
-  tier: SubscriptionTier;
-  status: 'active' | 'cancelled' | 'expired' | 'trial';
-  tokensRemaining: number;
-  tokensTotal: number;
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  autoRenew: boolean;
-  stripeSubscriptionId?: string;
-  stripeCustomerId?: string;
-}
-
-export interface PaymentIntent {
-  id: string;
-  amount: number;
-  currency: string;
-  status: 'pending' | 'processing' | 'succeeded' | 'failed';
-  type: 'token_purchase' | 'subscription';
-  metadata?: {
-    tokenPackageId?: string;
-    subscriptionPlanId?: string;
-  };
-}
-
-export interface Transaction {
-  id: string;
-  userId: string;
-  type: 'token_purchase' | 'subscription' | 'refund';
-  amount: number;
-  currency: string;
-  status: 'completed' | 'pending' | 'failed';
-  timestamp: Date;
-  description: string;
-  stripePaymentIntentId?: string;
 }
